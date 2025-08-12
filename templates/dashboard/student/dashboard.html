@@ -1,0 +1,186 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Student Dashboard" %} - Amar Quran{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Welcome Section -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{% trans "Welcome back" %}, {{ user.first_name }}!</h1>
+        <p class="text-gray-600 mt-2">{% trans "Here's your learning progress overview" %}</p>
+    </div>
+    
+    <!-- Announcements -->
+    {% if announcements %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-bullhorn text-yellow-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800">{% trans "Announcements" %}</h3>
+                {% for announcement in announcements %}
+                    <p class="mt-2 text-sm text-yellow-700">
+                        <strong>{{ announcement.title }}:</strong> {{ announcement.content|truncatewords:20 }}
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Courses -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-blue-100 rounded-full">
+                    <i class="fas fa-book text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Enrolled Courses" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ total_courses }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Completed Courses -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-green-100 rounded-full">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Completed" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ completed_courses }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance Rate -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-purple-100 rounded-full">
+                    <i class="fas fa-user-check text-purple-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Attendance" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ attendance_rate }}%</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Average Progress -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-orange-100 rounded-full">
+                    <i class="fas fa-chart-line text-orange-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Avg Progress" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ avg_progress }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Upcoming Classes -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">{% trans "Upcoming Classes" %}</h2>
+            </div>
+            <div class="p-6">
+                {% if upcoming_sessions %}
+                    <div class="space-y-4">
+                        {% for session in upcoming_sessions %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <h3 class="font-medium text-gray-800">{{ session.course.title }}</h3>
+                                <p class="text-sm text-gray-600">
+                                    <i class="far fa-calendar mr-1"></i> {{ session.date|date:"M d, Y" }}
+                                    <i class="far fa-clock ml-3 mr-1"></i> {{ session.start_time|time:"g:i A" }}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    <i class="fas fa-chalkboard-teacher mr-1"></i> {{ session.teacher.get_full_name }}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                {% if session.meeting_link %}
+                                    <a href="{{ session.meeting_link }}" target="_blank" 
+                                       class="inline-block bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                        {% trans "Join Class" %}
+                                    </a>
+                                {% else %}
+                                    <span class="text-sm text-gray-500">{% trans "Link pending" %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-center py-8">{% trans "No upcoming classes scheduled" %}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Active Courses Progress -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">{% trans "Course Progress" %}</h2>
+            </div>
+            <div class="p-6">
+                {% if enrollments %}
+                    <div class="space-y-4">
+                        {% for enrollment in enrollments %}
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">{{ enrollment.course.title }}</span>
+                                <span class="text-sm text-gray-600">{{ enrollment.progress_percentage }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: {{ enrollment.progress_percentage }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-center py-8">{% trans "No active courses" %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow mt-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Recent Activity" %}</h2>
+        </div>
+        <div class="p-6">
+            {% if recent_activity %}
+                <div class="space-y-3">
+                    {% for activity in recent_activity %}
+                    <div class="flex items-center text-sm">
+                        <i class="fas fa-circle text-green-500 text-xs mr-3"></i>
+                        <span class="text-gray-600">{{ activity.get_action_display }}</span>
+                        <span class="text-gray-400 ml-auto">{{ activity.timestamp|timesince }} {% trans "ago" %}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-center py-4">{% trans "No recent activity" %}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh upcoming classes every 5 minutes
+    setInterval(function() {
+        location.reload();
+    }, 300000);
+</script>
+{% endblock %}

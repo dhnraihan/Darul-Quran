@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Enroll in Course" %} - {{ course.title }} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="flex items-center justify-center w-10 h-10 bg-green-600 text-white rounded-full">
+                    <span class="font-semibold">1</span>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-900">{% trans "Select Teacher" %}</span>
+            </div>
+            <div class="w-24 h-1 bg-gray-300 mx-4"></div>
+            <div class="flex items-center">
+                <div class="flex items-center justify-center w-10 h-10 bg-gray-300 text-gray-600 rounded-full">
+                    <span class="font-semibold">2</span>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-500">{% trans "Schedule" %}</span>
+            </div>
+            <div class="w-24 h-1 bg-gray-300 mx-4"></div>
+            <div class="flex items-center">
+                <div class="flex items-center justify-center w-10 h-10 bg-gray-300 text-gray-600 rounded-full">
+                    <span class="font-semibold">3</span>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-500">{% trans "Payment" %}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Info -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+        <div class="p-6">
+            <div class="flex items-start">
+                {% if course.thumbnail %}
+                    <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                         class="w-32 h-32 object-cover rounded-lg mr-6">
+                {% else %}
+                    <div class="w-32 h-32 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-6">
+                        <i class="fas fa-book-quran text-white text-3xl"></i>
+                    </div>
+                {% endif %}
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">{% trans "Enroll in" %} {{ course.title }}</h1>
+                    <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                        <span><i class="fas fa-clock mr-1"></i> {{ course.recommended_duration_weeks }} {% trans "weeks" %}</span>
+                        <span><i class="fas fa-video mr-1"></i> {{ course.sessions_per_week }} {% trans "sessions/week" %}</span>
+                        <span><i class="fas fa-hourglass mr-1"></i> {{ course.session_duration_minutes }} {% trans "min/session" %}</span>
+                        <span><i class="fas fa-users mr-1"></i> {{ course.get_age_group_display }}</span>
+                    </div>
+                    <div class="mt-4">
+                        {% if course.is_free %}
+                            <span class="text-2xl font-bold text-green-600">{% trans "Free Course" %}</span>
+                        {% else %}
+                            {% if course.discount_price %}
+                                <span class="text-2xl font-bold text-gray-800">৳{{ course.discount_price }}</span>
+                                <span class="text-lg text-gray-400 line-through ml-2">৳{{ course.price }}</span>
+                            {% else %}
+                                <span class="text-2xl font-bold text-gray-800">৳{{ course.price }}</span>
+                            {% endif %}
+                            <span class="text-sm text-gray-500 ml-2">{% trans "per month" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enrollment Form -->
+    <form method="post" class="bg-white rounded-lg shadow-md">
+        {% csrf_token %}
+        
+        <div class="p-6">
+            <h2 class="text-xl font-semibold mb-6">{% trans "Step 1: Choose Your Teacher" %}</h2>
+            
+            {% if course.teachers.exists %}
+                <div class="space-y-4">
+                    {% for teacher in course.teachers.all %}
+                    <label class="block cursor-pointer">
+                        <input type="radio" name="teacher" value="{{ teacher.id }}" class="hidden peer" required>
+                        <div class="border-2 rounded-lg p-4 hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50 transition">
+                            <div class="flex items-start">
+                                {% if teacher.profile_picture %}
+                                    <img src="{{ teacher.profile_picture.url }}" alt="{{ teacher.get_full_name }}" 
+                                         class="w-16 h-16 rounded-full mr-4">
+                                {% else %}
+                                    <div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center mr-4">
+                                        <i class="fas fa-user text-gray-500"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="font-semibold text-lg">{{ teacher.get_full_name }}</h3>
+                                        <div class="text-right">
+                                            {% if teacher.teacher_profile %}
+                                                <div class="flex items-center">
+                                                    <span class="text-yellow-400 mr-1">
+                                                        <i class="fas fa-star"></i>
+                                                    </span>
+                                                    <span class="font-semibold">{{ teacher.teacher_profile.rating|floatformat:1 }}</span>
+                                                    <span class="text-gray-500 text-sm ml-1">({{ teacher.teacher_profile.total_reviews }})</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if teacher.teacher_profile %}
+                                        <p class="text-gray-600 mt-2">{{ teacher.teacher_profile.bio|truncatewords:20 }}</p>
+                                        <div class="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
+                                            <span><i class="fas fa-graduation-cap mr-1"></i> {{ teacher.teacher_profile.years_of_experience }} {% trans "years" %}</span>
+                                            <span><i class="fas fa-language mr-1"></i> 
+                                                {% for lang in teacher.teacher_profile.languages|slice:":3" %}
+                                                    {{ lang }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                            <span><i class="fas fa-clock mr-1"></i> 
+                                                {% trans "Available:" %} 
+                                                {{ teacher.availabilities.count }} {% trans "slots/week" %}
+                                            </span>
+                                        </div>
+                                        <button type="button" onclick="viewTeacherProfile({{ teacher.id }})" 
+                                                class="text-green-600 hover:text-green-700 text-sm mt-2">
+                                            {% trans "View Full Profile" %} →
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <p class="text-blue-700">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        {% trans "A teacher will be assigned to you based on your preferences and availability." %}
+                    </p>
+                </div>
+            {% endif %}
+            
+            <!-- Additional Notes -->
+            <div class="mt-6">
+                <label for="notes" class="block text-gray-700 font-medium mb-2">
+                    {% trans "Additional Notes (Optional)" %}
+                </label>
+                <textarea name="notes" id="notes" rows="3"
+                          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                          placeholder="{% trans 'Any special requirements or preferences?' %}">{{ form.notes.value|default:'' }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">
+                    {% trans "Let us know about your learning goals, preferred timings, or any other requirements" %}
+                </p>
+            </div>
+            
+            <!-- Preferred Schedule (Optional) -->
+            <div class="mt-6">
+                <h3 class="font-medium text-gray-700 mb-3">{% trans "Preferred Class Schedule (Optional)" %}</h3>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">{% trans "Preferred Days" %}</label>
+                        <div class="space-y-2">
+                            {% for day in "0123456" %}
+                            <label class="flex items-center">
+                                <input type="checkbox" name="preferred_days" value="{{ day }}" class="mr-2">
+                                <span>
+                                    {% if day == "0" %}{% trans "Monday" %}
+                                    {% elif day == "1" %}{% trans "Tuesday" %}
+                                    {% elif day == "2" %}{% trans "Wednesday" %}
+                                    {% elif day == "3" %}{% trans "Thursday" %}
+                                    {% elif day == "4" %}{% trans "Friday" %}
+                                    {% elif day == "5" %}{% trans "Saturday" %}
+                                    {% elif day == "6" %}{% trans "Sunday" %}
+                                    {% endif %}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">{% trans "Preferred Time" %}</label>
+                        <select name="preferred_time" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                            <option value="">{% trans "Any time" %}</option>
+                            <option value="morning">{% trans "Morning (6 AM - 12 PM)" %}</option>
+                            <option value="afternoon">{% trans "Afternoon (12 PM - 6 PM)" %}</option>
+                            <option value="evening">{% trans "Evening (6 PM - 10 PM)" %}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Terms and Conditions -->
+            <div class="mt-6">
+                <label class="flex items-start">
+                    <input type="checkbox" name="agree_terms" required class="mt-1 mr-2">
+                    <span class="text-sm text-gray-700">
+                        {% trans "I understand that:" %}
+                        <ul class="mt-2 space-y-1 text-xs">
+                            <li>• {% trans "Classes will be conducted online via video conferencing" %}</li>
+                            <li>• {% trans "I need to maintain regular attendance for best results" %}</li>
+                            <li>• {% trans "Class schedules are subject to teacher availability" %}</li>
+                            <li>• {% trans "Refund policy applies as per terms and conditions" %}</li>
+                        </ul>
+                    </span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="px-6 py-4 bg-gray-50 border-t flex justify-between">
+            <a href="{% url 'courses:detail' course.slug %}" 
+               class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition">
+                <i class="fas fa-arrow-left mr-2"></i>{% trans "Back to Course" %}
+            </a>
+            <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                {% if course.is_free %}
+                    {% trans "Complete Enrollment" %} <i class="fas fa-arrow-right ml-2"></i>
+                {% else %}
+                    {% trans "Continue to Payment" %} <i class="fas fa-arrow-right ml-2"></i>
+                {% endif %}
+            </button>
+        </div>
+    </form>
+    
+    <!-- Why Choose Section -->
+    <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold mb-4">{% trans "What Happens Next?" %}</h3>
+        <div class="space-y-3">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-green-600 font-semibold">1</span>
+                </div>
+                <div>
+                    <h4 class="font-medium">{% trans "Confirmation" %}</h4>
+                    <p class="text-sm text-gray-600">{% trans "You'll receive a confirmation email with your enrollment details" %}</p>
+                </div>
+            </div>
+            <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-green-600 font-semibold">2</span>
+                </div>
+                <div>
+                    <h4 class="font-medium">{% trans "Schedule Setup" %}</h4>
+                    <p class="text-sm text-gray-600">{% trans "Your teacher will contact you within 24 hours to set up your class schedule" %}</p>
+                </div>
+            </div>
+            <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-green-600 font-semibold">3</span>
+                </div>
+                <div>
+                    <h4 class="font-medium">{% trans "Start Learning" %}</h4>
+                    <p class="text-sm text-gray-600">{% trans "Begin your journey with your first live class" %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Profile Modal -->
+<div id="teacherModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">{% trans "Teacher Profile" %}</h3>
+                <button onclick="closeTeacherModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="teacherProfileContent" class="px-4 py-3">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show teacher profile modal
+    function viewTeacherProfile(teacherId) {
+        // In a real implementation, fetch teacher details via AJAX
+        document.getElementById('teacherModal').classList.remove('hidden');
+    }
+    
+    function closeTeacherModal() {
+        document.getElementById('teacherModal').classList.add('hidden');
+    }
+    
+    // Validate form before submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const teacherSelected = document.querySelector('input[name="teacher"]:checked');
+        const termsAgreed = document.querySelector('input[name="agree_terms"]').checked;
+        
+        if (!termsAgreed) {
+            e.preventDefault();
+            alert('{% trans "Please agree to the terms and conditions" %}');
+            return;
+        }
+        
+        // If teachers are available but none selected
+        {% if course.teachers.exists %}
+        if (!teacherSelected) {
+            e.preventDefault();
+            alert('{% trans "Please select a teacher" %}');
+            return;
+        }
+        {% endif %}
+    });
+</script>
+{% endblock %}

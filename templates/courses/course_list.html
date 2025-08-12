@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Courses" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-4">{% trans "Our Courses" %}</h1>
+        <p class="text-gray-600">{% trans "Choose from our wide range of Islamic courses" %}</p>
+    </div>
+    
+    <!-- Filters -->
+    <div class="mb-8 bg-white p-4 rounded-lg shadow">
+        <form method="get" class="grid md:grid-cols-4 gap-4">
+            <!-- Search -->
+            <div>
+                <input type="text" name="q" value="{{ search_query }}" 
+                       placeholder="{% trans 'Search courses...' %}"
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            
+            <!-- Category Filter -->
+            <div>
+                <select name="category" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    <option value="">{% trans "All Categories" %}</option>
+                    {% for category in categories %}
+                        <option value="{{ category.slug }}" {% if category.slug == selected_category %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Age Group Filter -->
+            <div>
+                <select name="age" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    <option value="">{% trans "All Age Groups" %}</option>
+                    <option value="5-7" {% if selected_age == "5-7" %}selected{% endif %}>5-7 {% trans "years" %}</option>
+                    <option value="8-10" {% if selected_age == "8-10" %}selected{% endif %}>8-10 {% trans "years" %}</option>
+                    <option value="11-13" {% if selected_age == "11-13" %}selected{% endif %}>11-13 {% trans "years" %}</option>
+                    <option value="14-16" {% if selected_age == "14-16" %}selected{% endif %}>14-16 {% trans "years" %}</option>
+                    <option value="17-19" {% if selected_age == "17-19" %}selected{% endif %}>17-19 {% trans "years" %}</option>
+                    <option value="20+" {% if selected_age == "20+" %}selected{% endif %}>20+ {% trans "years" %}</option>
+                </select>
+            </div>
+            
+            <!-- Submit Button -->
+            <div>
+                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+                    <i class="fas fa-search mr-2"></i>{% trans "Search" %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Courses Grid -->
+    <div class="grid md:grid-cols-3 gap-6 mb-8">
+        {% for course in courses %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+            {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-48 object-cover">
+            {% else %}
+            <div class="w-full h-48 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                <i class="fas fa-book-quran text-white text-4xl"></i>
+            </div>
+            {% endif %}
+            
+            <div class="p-6">
+                <!-- Course Type Badge -->
+                <span class="inline-block px-3 py-1 text-xs font-semibold text-green-600 bg-green-100 rounded-full mb-2">
+                    {{ course.get_course_type_display }}
+                </span>
+                
+                <h3 class="text-xl font-semibold mb-2">
+                    {% if request.LANGUAGE_CODE == 'bn' and course.title_bn %}
+                        {{ course.title_bn }}
+                    {% else %}
+                        {{ course.title }}
+                    {% endif %}
+                </h3>
+                
+                <p class="text-gray-600 mb-4 line-clamp-3">
+                    {% if request.LANGUAGE_CODE == 'bn' and course.description_bn %}
+                        {{ course.description_bn|truncatewords:20 }}
+                    {% else %}
+                        {{ course.description|truncatewords:20 }}
+                    {% endif %}
+                </p>
+                
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-clock mr-1"></i>
+                        {{ course.recommended_duration_weeks }} {% trans "weeks" %}
+                    </div>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <i class="fas fa-users mr-1"></i>
+                        {{ course.age_group }}
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        {% if course.is_free %}
+                            <span class="text-2xl font-bold text-green-600">{% trans "Free" %}</span>
+                        {% else %}
+                            {% if course.discount_price %}
+                                <span class="text-lg text-gray-400 line-through">৳{{ course.price }}</span>
+                                <span class="text-2xl font-bold text-green-600 ml-2">৳{{ course.discount_price }}</span>
+                            {% else %}
+                                <span class="text-2xl font-bold text-green-600">৳{{ course.price }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'courses:detail' course.slug %}" 
+                       class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                        {% trans "View Details" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 text-center py-12">
+            <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500">{% trans "No courses found matching your criteria." %}</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if courses.has_other_pages %}
+    <div class="flex justify-center">
+        <nav class="flex space-x-2">
+            {% if courses.has_previous %}
+                <a href="?page={{ courses.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_age %}&age={{ selected_age }}{% endif %}" 
+                   class="px-3 py-2 bg-white border rounded hover:bg-gray-100">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% endif %}
+            
+            {% for num in courses.paginator.page_range %}
+                {% if courses.number == num %}
+                    <span class="px-3 py-2 bg-green-600 text-white rounded">{{ num }}</span>
+                {% elif num > courses.number|add:'-3' and num < courses.number|add:'3' %}
+                    <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_age %}&age={{ selected_age }}{% endif %}" 
+                       class="px-3 py-2 bg-white border rounded hover:bg-gray-100">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if courses.has_next %}
+                <a href="?page={{ courses.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_age %}&age={{ selected_age }}{% endif %}" 
+                   class="px-3 py-2 bg-white border rounded hover:bg-gray-100">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

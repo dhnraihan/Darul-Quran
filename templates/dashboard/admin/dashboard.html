@@ -1,0 +1,176 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+{% load dashboard_tags %}
+
+{% block title %}{% trans "Admin Dashboard" %} - Amar Quran{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{% trans "Admin Dashboard" %}</h1>
+        <p class="text-gray-600 mt-2">{% trans "System overview and management" %}</p>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                    <strong>{% trans "Quick Actions:" %}</strong>
+                    <a href="/admin/" class="underline ml-2">{% trans "Django Admin" %}</a> |
+                    <a href="{% url 'dashboard:admin_reports' %}" class="underline ml-2">{% trans "Generate Reports" %}</a> |
+                    <a href="{% url 'classes:assessment' %}" class="underline ml-2">{% trans "View Assessments" %}</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Users -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-blue-100 rounded-full">
+                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Total Users" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ total_users }}</p>
+                    <p class="text-xs text-gray-500">
+                        {{ total_students }} {% trans "students" %}, 
+                        {{ total_teachers }} {% trans "teachers" %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Revenue -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-green-100 rounded-full">
+                    <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Total Revenue" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">৳{{ total_revenue|floatformat:0 }}</p>
+                    <p class="text-xs text-green-600">
+                        ৳{{ monthly_revenue|floatformat:0 }} {% trans "this month" %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Courses -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-purple-100 rounded-full">
+                    <i class="fas fa-book text-purple-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Active Courses" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ total_courses }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Today's Sessions -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-orange-100 rounded-full">
+                    <i class="fas fa-calendar-day text-orange-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-gray-500 text-sm">{% trans "Today's Sessions" %}</h3>
+                    <p class="text-2xl font-bold text-gray-800">{{ today_sessions }}</p>
+                    {% if pending_assessments > 0 %}
+                    <p class="text-xs text-orange-600">
+                        {{ pending_assessments }} {% trans "pending assessments" %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Users -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-800">{% trans "Recent Registrations" %}</h2>
+                <a href="/admin/accounts/user/" class="text-sm text-green-600 hover:text-green-700">
+                    {% trans "View All" %} →
+                </a>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    {% for user in recent_users %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}"
+                                     class="w-8 h-8 rounded-full mr-3">
+                            {% else %}
+                                <div class="w-8 h-8 rounded-full bg-gray-300 mr-3"></div>
+                            {% endif %}
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ user.get_full_name|default:user.email }}</p>
+                                <p class="text-xs text-gray-500">{{ user.get_user_type_display }}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500">{{ user.created_at|timesince }} {% trans "ago" %}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Popular Courses -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-800">{% trans "Popular Courses" %}</h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    {% for stat in course_stats %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-700">{{ stat.course__title }}</span>
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                            {{ stat.count }} {% trans "students" %}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Platform Usage -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Platform Usage Statistics" %}</h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% for stat in platform_stats %}
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-800">{{ stat.count }}</div>
+                    <div class="text-sm text-gray-600">{{ stat.platform|title }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Add any admin dashboard specific JavaScript here
+    // For example, real-time statistics updates via WebSocket
+</script>
+{% endblock %}

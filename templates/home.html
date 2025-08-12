@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Home" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-green-600 to-green-700 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6">
+                {% trans "Learn Qur'an Online" %}
+            </h1>
+            <p class="text-xl md:text-2xl mb-8">
+                {% trans "One-to-One Live Classes with Qualified Teachers" %}
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'classes:assessment' %}" class="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                    {% trans "Book Free Trial" %}
+                </a>
+                <a href="{% url 'courses:list' %}" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition">
+                    {% trans "Explore Courses" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12">{% trans "Why Choose Amar Quran?" %}</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="text-center">
+                <div class="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-chalkboard-teacher text-3xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">{% trans "Expert Teachers" %}</h3>
+                <p class="text-gray-600">{% trans "Learn from qualified and experienced Islamic teachers" %}</p>
+            </div>
+            <div class="text-center">
+                <div class="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clock text-3xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">{% trans "Flexible Schedule" %}</h3>
+                <p class="text-gray-600">{% trans "Choose class times that fit your schedule" %}</p>
+            </div>
+            <div class="text-center">
+                <div class="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user text-3xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">{% trans "One-to-One Classes" %}</h3>
+                <p class="text-gray-600">{% trans "Personalized attention for better learning" %}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Courses -->
+<section class="py-16 bg-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12">{% trans "Popular Courses" %}</h2>
+        <div class="grid md:grid-cols-3 gap-8">
+            {% for course in featured_courses %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-48 object-cover">
+                {% else %}
+                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-book-quran text-4xl text-gray-400"></i>
+                </div>
+                {% endif %}
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-2">{{ course.title }}</h3>
+                    <p class="text-gray-600 mb-4">{{ course.description|truncatewords:20 }}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-600 font-semibold">
+                            {% if course.is_free %}
+                                {% trans "Free" %}
+                            {% else %}
+                                ৳{{ course.current_price }}
+                            {% endif %}
+                        </span>
+                        <a href="{% url 'courses:detail' course.slug %}" class="text-green-600 hover:text-green-700">
+                            {% trans "Learn More" %} →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12">{% trans "What Our Students Say" %}</h2>
+        <div class="grid md:grid-cols-2 gap-8">
+            {% for review in recent_reviews %}
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex items-center mb-4">
+                    <div class="flex text-yellow-400">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= review.rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="ml-2 text-gray-600">{{ review.rating }}/5</span>
+                </div>
+                <p class="text-gray-700 mb-4">"{{ review.comment }}"</p>
+                <div class="flex items-center">
+                    {% if review.student.profile_picture %}
+                    <img src="{{ review.student.profile_picture.url }}" alt="{{ review.student.get_full_name }}" class="w-10 h-10 rounded-full mr-3">
+                    {% else %}
+                    <div class="w-10 h-10 rounded-full bg-gray-300 mr-3"></div>
+                    {% endif %}
+                    <div>
+                        <p class="font-semibold">{{ review.student.get_full_name }}</p>
+                        <p class="text-sm text-gray-600">{{ review.course.title }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="bg-green-600 text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl font-bold mb-4">{% trans "Start Your Qur'anic Journey Today" %}</h2>
+        <p class="text-xl mb-8">{% trans "Join thousands of students learning Qur'an online" %}</p>
+        <a href="{% url 'accounts:register' %}" class="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block">
+            {% trans "Get Started Now" %}
+        </a>
+    </div>
+</section>
+{% endblock %}

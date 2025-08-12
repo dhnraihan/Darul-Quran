@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "My Profile" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md">
+        <!-- Profile Header -->
+        <div class="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-lg">
+            <div class="flex items-center">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" 
+                         class="w-24 h-24 rounded-full border-4 border-white mr-6">
+                {% else %}
+                    <div class="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mr-6">
+                        <i class="fas fa-user text-4xl"></i>
+                    </div>
+                {% endif %}
+                <div>
+                    <h1 class="text-2xl font-bold">{{ user.get_full_name|default:user.email }}</h1>
+                    <p class="text-green-100">{{ user.get_user_type_display }}</p>
+                    <p class="text-sm text-green-100 mt-1">
+                        {% trans "Member since" %} {{ user.created_at|date:"F Y" }}
+                    </p>
+                </div>
+                <div class="ml-auto">
+                    <a href="{% url 'accounts:profile_edit' %}" 
+                       class="bg-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/30 transition">
+                        <i class="fas fa-edit mr-2"></i>{% trans "Edit Profile" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Content -->
+        <div class="p-6">
+            <!-- Basic Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">{% trans "Basic Information" %}</h2>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Email Address" %}</label>
+                        <p class="font-medium text-gray-800">
+                            {{ user.email }}
+                            {% if user.is_email_verified %}
+                                <span class="text-green-600 text-sm ml-2">
+                                    <i class="fas fa-check-circle"></i> {% trans "Verified" %}
+                                </span>
+                            {% else %}
+                                <span class="text-yellow-600 text-sm ml-2">
+                                    <i class="fas fa-exclamation-circle"></i> {% trans "Not verified" %}
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Phone Number" %}</label>
+                        <p class="font-medium text-gray-800">
+                            {{ user.phone_number|default:"Not provided" }}
+                            {% if user.phone_number and user.is_phone_verified %}
+                                <span class="text-green-600 text-sm ml-2">
+                                    <i class="fas fa-check-circle"></i> {% trans "Verified" %}
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Date of Birth" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.date_of_birth|date:"F d, Y"|default:"Not provided" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Preferred Language" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.get_preferred_language_display }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Address Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">{% trans "Address Information" %}</h2>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Address" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.address|default:"Not provided" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "City" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.city|default:"Not provided" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Country" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.country|default:"Not provided" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Teacher Profile (if teacher) -->
+            {% if user.is_teacher and user.teacher_profile %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">{% trans "Teacher Information" %}</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Biography" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.teacher_profile.bio|default:"Not provided" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Education" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.teacher_profile.education|default:"Not provided" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Qualifications" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.teacher_profile.qualifications|default:"Not provided" }}</p>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-sm text-gray-500">{% trans "Experience" %}</label>
+                            <p class="font-medium text-gray-800">{{ user.teacher_profile.years_of_experience }} {% trans "years" %}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-500">{% trans "Rating" %}</label>
+                            <p class="font-medium text-gray-800">
+                                {{ user.teacher_profile.rating|floatformat:1 }} 
+                                <i class="fas fa-star text-yellow-400"></i>
+                                ({{ user.teacher_profile.total_reviews }} {% trans "reviews" %})
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-500">{% trans "Hourly Rate" %}</label>
+                            <p class="font-medium text-gray-800">
+                                {% if user.teacher_profile.hourly_rate %}
+                                    ৳{{ user.teacher_profile.hourly_rate }}
+                                {% else %}
+                                    {% trans "Not set" %}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Student Profile (if student) -->
+            {% if user.is_student and user.student_profile %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">{% trans "Student Information" %}</h2>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Age Group" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.student_profile.get_age_group_display|default:"Not specified" }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Current Level" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.student_profile.get_current_level_display }}</p>
+                    </div>
+                    {% if user.student_profile.parent_name %}
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Parent/Guardian" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.student_profile.parent_name }}</p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-500">{% trans "Parent Contact" %}</label>
+                        <p class="font-medium text-gray-800">{{ user.student_profile.parent_phone|default:user.student_profile.parent_email }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if user.student_profile.learning_goals %}
+                <div class="mt-4">
+                    <label class="text-sm text-gray-500">{% trans "Learning Goals" %}</label>
+                    <p class="font-medium text-gray-800">{{ user.student_profile.learning_goals }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Account Security -->
+            <div class="border-t pt-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">{% trans "Account Security" %}</h2>
+                <div class="space-y-3">
+                    <a href="{% url 'accounts:password_change' %}" 
+                       class="inline-block bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                        <i class="fas fa-key mr-2"></i>{% trans "Change Password" %}
+                    </a>
+                    {% if not user.is_email_verified %}
+                    <a href="{% url 'accounts:verify_email_request' %}" 
+                       class="inline-block bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition ml-2">
+                        <i class="fas fa-envelope mr-2"></i>{% trans "Verify Email" %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

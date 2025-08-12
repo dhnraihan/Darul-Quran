@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Confirm Booking" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-lg">
+            <h1 class="text-2xl font-bold">{% trans "Confirm Your Booking" %}</h1>
+            <p class="text-green-100 mt-2">{% trans "Please review your booking details" %}</p>
+        </div>
+        
+        <div class="p-6">
+            <!-- Booking Summary -->
+            <div class="space-y-4 mb-6">
+                <div class="flex justify-between py-3 border-b">
+                    <span class="text-gray-600">{% trans "Course" %}</span>
+                    <span class="font-semibold">{{ booking.course.title }}</span>
+                </div>
+                
+                <div class="flex justify-between py-3 border-b">
+                    <span class="text-gray-600">{% trans "Teacher" %}</span>
+                    <span class="font-semibold">{{ booking.teacher.get_full_name }}</span>
+                </div>
+                
+                <div class="flex justify-between py-3 border-b">
+                    <span class="text-gray-600">{% trans "Date" %}</span>
+                    <span class="font-semibold">{{ booking.date|date:"l, F d, Y" }}</span>
+                </div>
+                
+                <div class="flex justify-between py-3 border-b">
+                    <span class="text-gray-600">{% trans "Time" %}</span>
+                    <span class="font-semibold">{{ booking.start_time|time:"g:i A" }} - {{ booking.end_time|time:"g:i A" }}</span>
+                </div>
+                
+                <div class="flex justify-between py-3 border-b">
+                    <span class="text-gray-600">{% trans "Duration" %}</span>
+                    <span class="font-semibold">{{ booking.duration }} {% trans "minutes" %}</span>
+                </div>
+                
+                <div class="flex justify-between py-3 border-b">
+                    <span class="text-gray-600">{% trans "Platform" %}</span>
+                    <span class="font-semibold">{{ booking.get_platform_display }}</span>
+                </div>
+                
+                {% if booking.notes %}
+                <div class="py-3 border-b">
+                    <span class="text-gray-600 block mb-2">{% trans "Notes" %}</span>
+                    <p class="text-gray-700">{{ booking.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Important Information -->
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">{% trans "Important Information" %}</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>{% trans "You will receive the meeting link 30 minutes before the class" %}</li>
+                                <li>{% trans "Please join the class 5 minutes early" %}</li>
+                                <li>{% trans "Ensure you have a stable internet connection" %}</li>
+                                <li>{% trans "Test your camera and microphone before the class" %}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cancellation Policy -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">{% trans "Cancellation Policy" %}</h3>
+                        <p class="mt-2 text-sm text-yellow-700">
+                            {% trans "You can cancel or reschedule this class up to 24 hours before the scheduled time. Late cancellations may result in a penalty." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Confirmation Actions -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    <label class="flex items-start">
+                        <input type="checkbox" name="agree_terms" required class="mt-1 mr-2">
+                        <span class="text-sm text-gray-700">
+                            {% trans "I understand the class policies and agree to attend the scheduled session. I will notify my teacher at least 24 hours in advance if I need to reschedule." %}
+                        </span>
+                    </label>
+                </div>
+                
+                <div class="flex justify-between">
+                    <a href="{% url 'classes:book' %}" 
+                       class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition">
+                        <i class="fas fa-arrow-left mr-2"></i>{% trans "Go Back" %}
+                    </a>
+                    <button type="submit" 
+                            class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-check mr-2"></i>{% trans "Confirm Booking" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- What Happens Next -->
+    <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold mb-4">{% trans "What Happens Next?" %}</h2>
+        <div class="space-y-3">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-green-600 font-semibold">1</span>
+                </div>
+                <div>
+                    <h4 class="font-medium">{% trans "Confirmation Email" %}</h4>
+                    <p class="text-sm text-gray-600">{% trans "You'll receive a confirmation email with all the details" %}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-green-600 font-semibold">2</span>
+                </div>
+                <div>
+                    <h4 class="font-medium">{% trans "Meeting Link" %}</h4>
+                    <p class="text-sm text-gray-600">{% trans "The meeting link will be sent 30 minutes before the class" %}</p>
+                </div>
+            </div>
+            
+            <div class="flex items-start">
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <span class="text-green-600 font-semibold">3</span>
+                </div>
+                <div>
+                    <h4 class="font-medium">{% trans "Join Class" %}</h4>
+                    <p class="text-sm text-gray-600">{% trans "Join the class on time and enjoy learning!" %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

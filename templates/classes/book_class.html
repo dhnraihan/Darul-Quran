@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Book a Class" %} - Amar Quran{% endblock %}
+
+{% block extra_css %}
+<style>
+    .time-slot {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .time-slot:hover {
+        background-color: #f0fdf4;
+        border-color: #10b981;
+    }
+    .time-slot.selected {
+        background-color: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+    .calendar-day {
+        min-height: 80px;
+    }
+    .calendar-day.available {
+        background-color: #f0fdf4;
+        cursor: pointer;
+    }
+    .calendar-day.selected {
+        background-color: #10b981;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">{% trans "Book a Class" %}</h1>
+    
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center">
+                <div class="step-number bg-green-600 text-white">1</div>
+                <span class="ml-2 text-sm font-medium">{% trans "Select Course" %}</span>
+            </div>
+            <div class="w-20 h-1 bg-gray-300 mx-3"></div>
+            <div class="flex items-center">
+                <div class="step-number bg-gray-300 text-gray-600" id="step2">2</div>
+                <span class="ml-2 text-sm font-medium text-gray-500">{% trans "Choose Teacher" %}</span>
+            </div>
+            <div class="w-20 h-1 bg-gray-300 mx-3"></div>
+            <div class="flex items-center">
+                <div class="step-number bg-gray-300 text-gray-600" id="step3">3</div>
+                <span class="ml-2 text-sm font-medium text-gray-500">{% trans "Pick Date & Time" %}</span>
+            </div>
+        </div>
+    </div>
+    
+    <form method="post" id="bookingForm">
+        {% csrf_token %}
+        
+        <!-- Step 1: Select Course -->
+        <div id="step1-content" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Step 1: Select Your Course" %}</h2>
+            
+            {% if courses %}
+                <div class="grid md:grid-cols-2 gap-4">
+                    {% for course in courses %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="course_id" value="{{ course.id }}" class="hidden peer" required>
+                        <div class="border-2 rounded-lg p-4 hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <div class="flex items-start">
+                                {% if course.thumbnail %}
+                                    <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                                         class="w-16 h-16 object-cover rounded mr-4">
+                                {% else %}
+                                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded flex items-center justify-center mr-4">
+                                        <i class="fas fa-book-quran text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <h3 class="font-semibold">{{ course.title }}</h3>
+                                    <p class="text-sm text-gray-600 mt-1">
+                                        <i class="far fa-clock mr-1"></i>{{ course.session_duration_minutes }} {% trans "minutes" %}
+                                        <span class="ml-3">
+                                            <i class="far fa-calendar mr-1"></i>{{ course.sessions_per_week }}x {% trans "per week" %}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="button" onclick="nextStep(2)" 
+                            class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                        {% trans "Next" %} <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-circle text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 mb-4">{% trans "You need to be enrolled in a course to book classes." %}</p>
+                    <a href="{% url 'courses:list' %}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                        {% trans "Browse Courses" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Step 2: Choose Teacher -->
+        <div id="step2-content" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Step 2: Choose Your Teacher" %}</h2>
+            
+            <div id="teachersList" class="space-y-4">
+                <!-- Teachers will be loaded dynamically based on selected course -->
+            </div>
+            
+            <div class="mt-6 flex justify-between">
+                <button type="button" onclick="previousStep(1)" 
+                        class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                    <i class="fas fa-arrow-left mr-2"></i> {% trans "Previous" %}
+                </button>
+                <button type="button" onclick="nextStep(3)" 
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                    {% trans "Next" %} <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Pick Date & Time -->
+        <div id="step3-content" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Step 3: Pick Date & Time" %}</h2>
+            
+            <!-- Calendar -->
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">{% trans "Select Date" %}</label>
+                <div id="calendar" class="border rounded-lg p-4">
+                    <!-- Calendar will be generated by JavaScript -->
+                </div>
+                <input type="hidden" name="date" id="selectedDate" required>
+            </div>
+            
+            <!-- Time Slots -->
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">{% trans "Available Time Slots" %}</label>
+                <div id="timeSlots" class="grid grid-cols-3 md:grid-cols-4 gap-3">
+                    <p class="col-span-full text-gray-500 text-center py-4">
+                        {% trans "Please select a date first" %}
+                    </p>
+                </div>
+                <input type="hidden" name="time" id="selectedTime" required>
+            </div>
+            
+            <!-- Platform Selection -->
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">{% trans "Preferred Platform" %}</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="platform" value="teams" class="hidden peer" checked>
+                        <div class="border-2 rounded-lg p-3 text-center hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <i class="fab fa-microsoft text-2xl text-blue-600 mb-1"></i>
+                            <p class="text-sm">Teams</p>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="platform" value="zoom" class="hidden peer">
+                        <div class="border-2 rounded-lg p-3 text-center hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <i class="fas fa-video text-2xl text-blue-500 mb-1"></i>
+                            <p class="text-sm">Zoom</p>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="platform" value="google_meet" class="hidden peer">
+                        <div class="border-2 rounded-lg p-3 text-center hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <i class="fab fa-google text-2xl text-red-500 mb-1"></i>
+                            <p class="text-sm">Google Meet</p>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="platform" value="whatsapp" class="hidden peer">
+                        <div class="border-2 rounded-lg p-3 text-center hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <i class="fab fa-whatsapp text-2xl text-green-500 mb-1"></i>
+                            <p class="text-sm">WhatsApp</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Additional Notes -->
+            <div class="mb-6">
+                <label for="notes" class="block text-gray-700 font-medium mb-2">
+                    {% trans "Additional Notes (Optional)" %}
+                </label>
+                <textarea name="notes" id="notes" rows="3"
+                          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                          placeholder="{% trans 'Any specific topics or requirements for this session?' %}"></textarea>
+            </div>
+            
+            <div class="mt-6 flex justify-between">
+                <button type="button" onclick="previousStep(2)" 
+                        class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                    <i class="fas fa-arrow-left mr-2"></i> {% trans "Previous" %}
+                </button>
+                <button type="submit" 
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-check mr-2"></i> {% trans "Confirm Booking" %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .step-number {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+<script>
+let currentStep = 1;
+let selectedCourse = null;
+let selectedTeacher = null;
+
+function nextStep(step) {
+    if (step === 2) {
+        selectedCourse = document.querySelector('input[name="course_id"]:checked');
+        if (!selectedCourse) {
+            alert('{% trans "Please select a course" %}');
+            return;
+        }
+        loadTeachers(selectedCourse.value);
+    }
+    
+    if (step === 3) {
+        selectedTeacher = document.querySelector('input[name="teacher_id"]:checked');
+        if (!selectedTeacher) {
+            alert('{% trans "Please select a teacher" %}');
+            return;
+        }
+        initCalendar();
+    }
+    
+    // Hide current step
+    document.getElementById(`step${currentStep}-content`).classList.add('hidden');
+    
+    // Show next step
+    document.getElementById(`step${step}-content`).classList.remove('hidden');
+    
+    // Update step indicators
+    document.getElementById(`step${step}`).classList.remove('bg-gray-300', 'text-gray-600');
+    document.getElementById(`step${step}`).classList.add('bg-green-600', 'text-white');
+    
+    currentStep = step;
+}
+
+function previousStep(step) {
+    // Hide current step
+    document.getElementById(`step${currentStep}-content`).classList.add('hidden');
+    
+    // Show previous step
+    document.getElementById(`step${step}-content`).classList.remove('hidden');
+    
+    // Update step indicators
+    document.getElementById(`step${currentStep}`).classList.remove('bg-green-600', 'text-white');
+    document.getElementById(`step${currentStep}`).classList.add('bg-gray-300', 'text-gray-600');
+    
+    currentStep = step;
+}
+
+function loadTeachers(courseId) {
+    // In a real implementation, this would fetch teachers via AJAX
+    const teachersHtml = `
+        <label class="cursor-pointer">
+            <input type="radio" name="teacher_id" value="1" class="hidden peer" required>
+            <div class="border-2 rounded-lg p-4 hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gray-300 rounded-full mr-4"></div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold">Teacher Name</h4>
+                        <p class="text-sm text-gray-600">5 years experience • ⭐ 4.8 rating</p>
+                    </div>
+                </div>
+            </div>
+        </label>
+    `;
+    document.getElementById('teachersList').innerHTML = teachersHtml;
+}
+
+function initCalendar() {
+    // Generate a simple calendar for the next 30 days
+    const calendar = document.getElementById('calendar');
+    const today = new Date();
+    let calendarHtml = '<div class="grid grid-cols-7 gap-2">';
+    
+    // Day headers
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    days.forEach(day => {
+        calendarHtml += `<div class="text-center text-sm font-medium text-gray-600">${day}</div>`;
+    });
+    
+    // Generate dates
+    for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        
+        if (i === 0) {
+            // Add empty cells for the first week
+            const firstDay = date.getDay();
+            for (let j = 0; j < firstDay; j++) {
+                calendarHtml += '<div></div>';
+            }
+        }
+        
+        const dateStr = date.toISOString().split('T')[0];
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        
+        calendarHtml += `
+            <div class="calendar-day border rounded p-2 text-center cursor-pointer hover:bg-green-50 ${!isWeekend ? 'available' : 'bg-gray-100'}"
+                 onclick="selectDate('${dateStr}', this)">
+                <div class="font-medium">${date.getDate()}</div>
+                <div class="text-xs text-gray-500">${date.toLocaleDateString('en', {month: 'short'})}</div>
+            </div>
+        `;
+    }
+    
+    calendarHtml += '</div>';
+    calendar.innerHTML = calendarHtml;
+}
+
+function selectDate(date, element) {
+    // Remove previous selection
+    document.querySelectorAll('.calendar-day').forEach(day => {
+        day.classList.remove('selected');
+    });
+    
+    // Add selection to clicked element
+    element.classList.add('selected');
+    document.getElementById('selectedDate').value = date;
+    
+    // Load available time slots
+    loadTimeSlots(date);
+}
+
+function loadTimeSlots(date) {
+    // This would fetch available slots via AJAX
+    const slots = [
+        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+    ];
+    
+    let slotsHtml = '';
+    slots.forEach(time => {
+        slotsHtml += `
+            <button type="button" 
+                    class="time-slot border-2 rounded-lg p-2 text-center hover:bg-green-50"
+                    onclick="selectTime('${time}', this)">
+                ${time}
+            </button>
+        `;
+    });
+    
+    document.getElementById('timeSlots').innerHTML = slotsHtml;
+}
+
+function selectTime(time, element) {
+    // Remove previous selection
+    document.querySelectorAll('.time-slot').forEach(slot => {
+        slot.classList.remove('selected');
+    });
+    
+    // Add selection to clicked element
+    element.classList.add('selected');
+    document.getElementById('selectedTime').value = time;
+}
+
+// Form validation
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const date = document.getElementById('selectedDate').value;
+    const time = document.getElementById('selectedTime').value;
+    
+    if (!date || !time) {
+        alert('{% trans "Please select both date and time" %}');
+        return;
+    }
+    
+    // Submit form
+    this.submit();
+});
+</script>
+{% endblock %}

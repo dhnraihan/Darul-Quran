@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans "Checkout" %} - {{ course.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-method-card {
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .payment-method-card:hover {
+        border-color: #059669;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .payment-method-card.selected {
+        border-color: #059669;
+        background-color: #ecfdf5;
+    }
+    
+    .price-tag {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #059669;
+    }
+    
+    .discount-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .course-summary {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <nav class="text-sm breadcrumbs mb-4">
+                <ul>
+                    <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+                    <li><a href="{% url 'courses:list' %}">{% trans "Courses" %}</a></li>
+                    <li><a href="{% url 'courses:detail' course.slug %}">{{ course.title|truncatechars:30 }}</a></li>
+                    <li class="text-gray-500">{% trans "Checkout" %}</li>
+                </ul>
+            </nav>
+            <h1 class="text-3xl font-bold text-gray-800">{% trans "Complete Your Enrollment" %}</h1>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Payment Methods -->
+            <div class="lg:col-span-2">
+                <!-- Course Summary -->
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6 course-summary">
+                    <div class="flex items-start space-x-4">
+                        {% if course.thumbnail %}
+                        <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                             class="w-24 h-24 object-cover rounded-lg">
+                        {% else %}
+                        <div class="w-24 h-24 bg-gray-300 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book text-gray-500 text-2xl"></i>
+                        </div>
+                        {% endif %}
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold text-gray-800">{{ course.title }}</h3>
+                            <p class="text-gray-600 mt-1">
+                                <i class="fas fa-user-tie mr-1"></i> {{ course.instructor.get_full_name }}
+                            </p>
+                            <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                <span><i class="fas fa-clock mr-1"></i> {{ course.duration }} {% trans "weeks" %}</span>
+                                <span><i class="fas fa-signal mr-1"></i> {{ course.get_level_display }}</span>
+                                <span><i class="fas fa-language mr-1"></i> {{ course.get_language_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-credit-card mr-2 text-green-600"></i>
+                        {% trans "Select Payment Method" %}
+                    </h2>
+
+                    <form id="payment-form" method="POST" action="{% url 'payments:process_payment' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="course_id" value="{{ course.id }}">
+                        
+                        <div class="space-y-4">
+                            <!-- SSLCommerz Payment Option -->
+                            <div class="payment-method-card border rounded-lg p-4" data-method="sslcommerz">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment_method" value="sslcommerz" 
+                                           class="mr-3" checked>
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <h3 class="font-semibold text-gray-800">
+                                                    {% trans "SSLCommerz" %}
+                                                </h3>
+                                                <p class="text-sm text-gray-600 mt-1">
+                                                    {% trans "Pay with bKash, Nagad, Cards, or Bank Transfer" %}
+                                                </p>
+                                            </div>
+                                            <div class="flex space-x-2">
+                                                <img src="{% static 'images/payment/bkash.png' %}" 
+                                                     alt="bKash" class="h-8">
+                                                <img src="{% static 'images/payment/nagad.png' %}" 
+                                                     alt="Nagad" class="h-8">
+                                                <img src="{% static 'images/payment/visa.png' %}" 
+                                                     alt="Visa" class="h-8">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Stripe Payment Option -->
+                            <div class="payment-method-card border rounded-lg p-4" data-method="stripe">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="payment_method" value="stripe" class="mr-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <h3 class="font-semibold text-gray-800">
+                                                    {% trans "International Cards" %}
+                                                </h3>
+                                                <p class="text-sm text-gray-600 mt-1">
+                                                    {% trans "Pay with Visa, MasterCard, or American Express" %}
+                                                </p>
+                                            </div>
+                                            <div class="flex space-x-2">
+                                                <img src="{% static 'images/payment/stripe.png' %}" 
+                                                     alt="Stripe" class="h-8">
+                                                <img src="{% static 'images/payment/mastercard.png' %}" 
+                                                     alt="MasterCard" class="h-8">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <label class="flex items-start">
+                                <input type="checkbox" id="terms-checkbox" class="mt-1 mr-3" required>
+                                <span class="text-sm text-gray-600">
+                                    {% trans "I agree to the" %} 
+                                    <a href="#" class="text-green-600 hover:underline">{% trans "Terms of Service" %}</a> 
+                                    {% trans "and" %} 
+                                    <a href="#" class="text-green-600 hover:underline">{% trans "Refund Policy" %}</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="submit-payment" 
+                                class="w-full mt-6 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-lock mr-2"></i>
+                            {% trans "Proceed to Payment" %}
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Security Notice -->
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-shield-alt text-blue-600 mt-1 mr-3"></i>
+                        <div>
+                            <h4 class="font-semibold text-blue-900">{% trans "Secure Payment" %}</h4>
+                            <p class="text-sm text-blue-700 mt-1">
+                                {% trans "Your payment information is encrypted and secure. We never store your card details." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                        {% trans "Order Summary" %}
+                    </h2>
+
+                    <!-- Price Details -->
+                    <div class="space-y-3 pb-4 border-b">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">{% trans "Course Price" %}</span>
+                            {% if course.original_price and course.original_price > course.current_price %}
+                            <span class="line-through text-gray-400">৳{{ course.original_price|intcomma }}</span>
+                            {% else %}
+                            <span>৳{{ course.current_price|intcomma }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if course.original_price and course.original_price > course.current_price %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">{% trans "Discount" %}</span>
+                            <span class="text-green-600">
+                                -৳{{ course.discount_amount|intcomma }} 
+                                ({{ course.discount_percentage }}% OFF)
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Total -->
+                    <div class="py-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-semibold text-gray-800">{% trans "Total" %}</span>
+                            <div class="text-right">
+                                <div class="price-tag">৳{{ course.current_price|intcomma }}</div>
+                                <div class="text-sm text-gray-500">≈ ${{ amount_usd }} USD</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- What's Included -->
+                    <div class="mt-6 pt-6 border-t">
+                        <h3 class="font-semibold text-gray-800 mb-3">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            {% trans "What's Included" %}
+                        </h3>
+                        <ul class="space-y-2 text-sm text-gray-600">
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-600 mr-2 mt-0.5"></i>
+                                {% trans "Full course access" %}
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-600 mr-2 mt-0.5"></i>
+                                {% trans "Certificate of completion" %}
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-600 mr-2 mt-0.5"></i>
+                                {% trans "Lifetime access" %}
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check text-green-600 mr-2 mt-0.5"></i>
+                                {% trans "30-day money-back guarantee" %}
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Help Section -->
+                    <div class="mt-6 pt-6 border-t">
+                        <p class="text-sm text-gray-600 text-center">
+                            {% trans "Need help?" %} 
+                            <a href="#" class="text-green-600 hover:underline">{% trans "Contact Support" %}</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    // Payment method selection
+    document.querySelectorAll('.payment-method-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Remove selected class from all cards
+            document.querySelectorAll('.payment-method-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked card
+            this.classList.add('selected');
+            
+            // Check the radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+        });
+    });
+
+    // Terms checkbox validation
+    const termsCheckbox = document.getElementById('terms-checkbox');
+    const submitButton = document.getElementById('submit-payment');
+    
+    termsCheckbox.addEventListener('change', function() {
+        submitButton.disabled = !this.checked;
+    });
+
+    // Form submission
+    document.getElementById('payment-form').addEventListener('submit', function(e) {
+        if (!termsCheckbox.checked) {
+            e.preventDefault();
+            alert('{% trans "Please agree to the terms and conditions" %}');
+            return false;
+        }
+        
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>{% trans "Processing..." %}';
+    });
+</script>
+{% endblock %}

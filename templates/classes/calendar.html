@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Class Calendar" %} - Amar Quran{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .fc-event {
+        cursor: pointer;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+    .fc-event-title {
+        font-weight: 500;
+    }
+    .session-scheduled { 
+        background-color: #3B82F6 !important; 
+        border-color: #3B82F6 !important; 
+    }
+    .session-completed { 
+        background-color: #10B981 !important; 
+        border-color: #10B981 !important; 
+    }
+    .session-cancelled { 
+        background-color: #EF4444 !important; 
+        border-color: #EF4444 !important; 
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{% trans "Class Calendar" %}</h1>
+            <p class="text-gray-600 mt-2">{% trans "View all your scheduled classes" %}</p>
+        </div>
+        <div class="flex space-x-2">
+            <button onclick="printCalendar()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                <i class="fas fa-print mr-2"></i>{% trans "Print" %}
+            </button>
+            <button onclick="exportCalendar()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                <i class="fas fa-download mr-2"></i>{% trans "Export" %}
+            </button>
+            {% if user.is_student %}
+            <a href="{% url 'classes:book' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                <i class="fas fa-plus mr-2"></i>{% trans "Book Class" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Calendar Controls -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                    <span class="text-sm">{% trans "Scheduled" %}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                    <span class="text-sm">{% trans "Completed" %}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    <span class="text-sm">{% trans "Cancelled" %}</span>
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <select id="courseFilter" class="px-3 py-1 border rounded-lg text-sm">
+                    <option value="">{% trans "All Courses" %}</option>
+                </select>
+                <select id="teacherFilter" class="px-3 py-1 border rounded-lg text-sm">
+                    <option value="">{% trans "All Teachers" %}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendar -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div id="calendar"></div>
+    </div>
+    
+    <!-- Upcoming Classes List (Mobile View) -->
+    <div class="mt-6 bg-white rounded-lg shadow-md md:hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Upcoming Classes" %}</h2>
+        </div>
+        <div class="p-6" id="upcomingClassesList">
+            <!-- Classes will be populated here -->
+        </div>
+    </div>
+</div>
+
+<!-- Class Details Modal -->
+<div id="classModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900" id="modalTitle"></h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="px-4 py-3">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button onclick="joinClass()" id="joinBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 hidden">
+                    <i class="fas fa-video mr-2"></i>{% trans "Join Class" %}
+                </button>
+                <button onclick="rescheduleClass()" id="rescheduleBtn" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                    <i class="fas fa-calendar-alt mr-2"></i>{% trans "Reschedule" %}
+                </button>
+                <button onclick="closeModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                    {% trans "Close" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script>
+    let calendar;
+    let currentEvent = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            height: 'auto',
+            events: '/api/classes/sessions/',  // API endpoint to fetch events
+            eventClick: function(info) {
+                showClassDetails(info.event);
+            },
+            eventDidMount: function(info) {
+                // Add status class
+                info.el.classList.add('session-' + info.event.extendedProps.status);
+            }
+        });
+        
+        calendar.render();
+    });
+    
+    function showClassDetails(event) {
+        currentEvent = event;
+        document.getElementById('modalTitle').textContent = event.title;
+        
+        const content = `
+            <div class="space-y-3">
+                <div>
+                    <strong>{% trans "Date:" %}</strong> ${event.start.toLocaleDateString()}
+                </div>
+                <div>
+                    <strong>{% trans "Time:" %}</strong> ${event.start.toLocaleTimeString()} - ${event.end.toLocaleTimeString()}
+                </div>
+                <div>
+                    <strong>{% trans "Status:" %}</strong> ${event.extendedProps.status}
+                </div>
+                ${event.extendedProps.teacher ? `
+                <div>
+                    <strong>{% trans "Teacher:" %}</strong> ${event.extendedProps.teacher}
+                </div>` : ''}
+                ${event.extendedProps.student ? `
+                <div>
+                    <strong>{% trans "Student:" %}</strong> ${event.extendedProps.student}
+                </div>` : ''}
+                ${event.extendedProps.platform ? `
+                <div>
+                    <strong>{% trans "Platform:" %}</strong> ${event.extendedProps.platform}
+                </div>` : ''}
+                ${event.extendedProps.meeting_link ? `
+                <div>
+                    <strong>{% trans "Meeting Link:" %}</strong> 
+                    <a href="${event.extendedProps.meeting_link}" target="_blank" class="text-green-600 hover:underline">
+                        {% trans "Join Meeting" %}
+                    </a>
+                </div>` : ''}
+            </div>
+        `;
+        
+        document.getElementById('modalContent').innerHTML = content;
+        
+        // Show/hide buttons based on status
+        if (event.extendedProps.status === 'scheduled' && event.extendedProps.meeting_link) {
+            document.getElementById('joinBtn').classList.remove('hidden');
+        } else {
+            document.getElementById('joinBtn').classList.add('hidden');
+        }
+        
+        document.getElementById('classModal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('classModal').classList.add('hidden');
+        currentEvent = null;
+    }
+    
+    function joinClass() {
+        if (currentEvent && currentEvent.extendedProps.meeting_link) {
+            window.open(currentEvent.extendedProps.meeting_link, '_blank');
+        }
+    }
+    
+    function rescheduleClass() {
+        if (currentEvent) {
+            window.location.href = `/classes/session/${currentEvent.id}/reschedule/`;
+        }
+    }
+    
+    function printCalendar() {
+        window.print();
+    }
+    
+    function exportCalendar() {
+        // Export to ICS format
+        window.location.href = '/api/classes/export/';
+    }
+    
+    // Filter handlers
+    document.getElementById('courseFilter').addEventListener('change', function() {
+        calendar.refetchEvents();
+    });
+    
+    document.getElementById('teacherFilter').addEventListener('change', function() {
+        calendar.refetchEvents();
+    });
+</script>
+{% endblock %}

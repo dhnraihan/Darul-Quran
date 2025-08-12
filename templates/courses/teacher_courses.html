@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ teacher.get_full_name }} - {% trans "Teacher Profile" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Teacher Profile Header -->
+    <div class="bg-white rounded-lg shadow-md mb-8">
+        <div class="bg-gradient-to-r from-green-600 to-green-700 p-8 rounded-t-lg">
+            <div class="flex items-center">
+                {% if teacher.profile_picture %}
+                    <img src="{{ teacher.profile_picture.url }}" alt="{{ teacher.get_full_name }}" 
+                         class="w-32 h-32 rounded-full border-4 border-white mr-6">
+                {% else %}
+                    <div class="w-32 h-32 rounded-full bg-white/20 flex items-center justify-center mr-6">
+                        <i class="fas fa-user text-white text-4xl"></i>
+                    </div>
+                {% endif %}
+                <div class="text-white">
+                    <h1 class="text-3xl font-bold">{{ teacher.get_full_name }}</h1>
+                    {% if teacher.teacher_profile %}
+                        <div class="flex items-center mt-2">
+                            <div class="flex text-yellow-400">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= teacher.teacher_profile.rating %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="ml-3">
+                                {{ teacher.teacher_profile.rating|floatformat:1 }} 
+                                ({{ total_reviews }} {% trans "reviews" %})
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-4 mt-4 text-sm">
+                            <span><i class="fas fa-graduation-cap mr-2"></i>{{ teacher.teacher_profile.years_of_experience }} {% trans "years experience" %}</span>
+                            <span><i class="fas fa-users mr-2"></i>{{ total_students }} {% trans "students" %}</span>
+                            <span><i class="fas fa-book mr-2"></i>{{ courses.count }} {% trans "courses" %}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if teacher.teacher_profile %}
+        <div class="p-8">
+            <h2 class="text-xl font-semibold mb-4">{% trans "About" %}</h2>
+            <p class="text-gray-700 mb-6">{{ teacher.teacher_profile.bio }}</p>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">{% trans "Education" %}</h3>
+                    <p class="text-gray-600">{{ teacher.teacher_profile.education }}</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-2">{% trans "Languages" %}</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for lang in teacher.teacher_profile.languages %}
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">{{ lang }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Teacher's Courses -->
+    <h2 class="text-2xl font-bold mb-6">{% trans "Courses by" %} {{ teacher.get_full_name }}</h2>
+    
+    <div class="grid md:grid-cols-3 gap-6">
+        {% for course in courses %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+            {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" 
+                     class="w-full h-48 object-cover">
+            {% else %}
+                <div class="w-full h-48 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                    <i class="fas fa-book-quran text-white text-4xl"></i>
+                </div>
+            {% endif %}
+            
+            <div class="p-6">
+                <h3 class="text-xl font-semibold mb-2">{{ course.title }}</h3>
+                <p class="text-gray-600 mb-4">{{ course.description|truncatewords:15 }}</p>
+                
+                <div class="flex items-center justify-between mb-4">
+                    {% if course.avg_rating %}
+                    <div class="flex items-center text-sm">
+                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                        <span>{{ course.avg_rating|floatformat:1 }}</span>
+                    </div>
+                    {% endif %}
+                    <span class="text-sm text-gray-500">
+                        <i class="fas fa-users mr-1"></i>{{ course.student_count }} {% trans "students" %}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        {% if course.is_free %}
+                            <span class="text-xl font-bold text-green-600">{% trans "Free" %}</span>
+                        {% else %}
+                            <span class="text-xl font-bold text-gray-800">৳{{ course.current_price }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'courses:detail' course.slug %}" 
+                       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        {% trans "View Course" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-3 text-center py-12">
+            <p class="text-gray-500">{% trans "No courses available from this teacher yet." %}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load dashboard_tags %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-md min-h-screen sticky top-16">
+            <div class="p-4">
+                <!-- User Info -->
+                <div class="mb-6 text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" 
+                             class="w-20 h-20 rounded-full mx-auto mb-2">
+                    {% else %}
+                        <div class="w-20 h-20 rounded-full bg-green-500 text-white flex items-center justify-center mx-auto mb-2">
+                            <i class="fas fa-user text-2xl"></i>
+                        </div>
+                    {% endif %}
+                    <h3 class="font-semibold">{{ user.get_full_name|default:user.email }}</h3>
+                    <p class="text-sm text-gray-600">{{ user.get_user_type_display }}</p>
+                </div>
+                
+                <!-- Navigation Menu -->
+                <nav class="space-y-2">
+                    {% if user.is_student %}
+                        <a href="{% url 'dashboard:student_dashboard' %}" 
+                           class="{% if request.resolver_match.url_name == 'student_dashboard' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-tachometer-alt mr-3"></i>
+                            {% trans "Dashboard" %}
+                        </a>
+                        <a href="{% url 'dashboard:student_courses' %}" 
+                           class="{% if request.resolver_match.url_name == 'student_courses' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-book mr-3"></i>
+                            {% trans "My Courses" %}
+                        </a>
+                        <a href="{% url 'dashboard:student_schedule' %}" 
+                           class="{% if request.resolver_match.url_name == 'student_schedule' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-calendar mr-3"></i>
+                            {% trans "Schedule" %}
+                        </a>
+                        <a href="{% url 'dashboard:student_progress' %}" 
+                           class="{% if request.resolver_match.url_name == 'student_progress' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            {% trans "Progress" %}
+                        </a>
+                        <a href="{% url 'dashboard:student_payments' %}" 
+                           class="{% if request.resolver_match.url_name == 'student_payments' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-credit-card mr-3"></i>
+                            {% trans "Payments" %}
+                        </a>
+                    {% elif user.is_teacher %}
+                        <a href="{% url 'dashboard:teacher_dashboard' %}" 
+                           class="{% if request.resolver_match.url_name == 'teacher_dashboard' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-tachometer-alt mr-3"></i>
+                            {% trans "Dashboard" %}
+                        </a>
+                        <a href="{% url 'dashboard:teacher_students' %}" 
+                           class="{% if request.resolver_match.url_name == 'teacher_students' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-users mr-3"></i>
+                            {% trans "My Students" %}
+                        </a>
+                        <a href="{% url 'dashboard:teacher_schedule' %}" 
+                           class="{% if request.resolver_match.url_name == 'teacher_schedule' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-calendar mr-3"></i>
+                            {% trans "Schedule" %}
+                        </a>
+                        <a href="{% url 'dashboard:teacher_earnings' %}" 
+                           class="{% if request.resolver_match.url_name == 'teacher_earnings' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-dollar-sign mr-3"></i>
+                            {% trans "Earnings" %}
+                        </a>
+                        <a href="{% url 'dashboard:teacher_availability' %}" 
+                           class="{% if request.resolver_match.url_name == 'teacher_availability' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-clock mr-3"></i>
+                            {% trans "Availability" %}
+                        </a>
+                    {% elif user.is_admin %}
+                        <a href="{% url 'dashboard:admin_dashboard' %}" 
+                           class="{% if request.resolver_match.url_name == 'admin_dashboard' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-tachometer-alt mr-3"></i>
+                            {% trans "Dashboard" %}
+                        </a>
+                        <a href="{% url 'dashboard:admin_reports' %}" 
+                           class="{% if request.resolver_match.url_name == 'admin_reports' %}bg-green-50 text-green-600 border-l-4 border-green-600{% else %}text-gray-700 hover:bg-gray-100{% endif %} flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            {% trans "Reports" %}
+                        </a>
+                        <a href="/admin/" target="_blank" class="text-gray-700 hover:bg-gray-100 flex items-center px-4 py-2 rounded">
+                            <i class="fas fa-cog mr-3"></i>
+                            {% trans "Admin Panel" %}
+                        </a>
+                    {% endif %}
+                    
+                    <!-- Common Links -->
+                    <hr class="my-4">
+                    <a href="{% url 'accounts:profile' %}" class="text-gray-700 hover:bg-gray-100 flex items-center px-4 py-2 rounded">
+                        <i class="fas fa-user-cog mr-3"></i>
+                        {% trans "Profile Settings" %}
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="text-gray-700 hover:bg-gray-100 flex items-center px-4 py-2 rounded">
+                        <i class="fas fa-sign-out-alt mr-3"></i>
+                        {% trans "Logout" %}
+                    </a>
+                </nav>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            {% block dashboard_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}

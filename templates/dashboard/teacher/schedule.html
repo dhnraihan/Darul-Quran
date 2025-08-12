@@ -1,0 +1,418 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+{% load dashboard_tags %}
+
+{% block title %}{% trans "Teaching Schedule" %} - Amar Quran{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .fc-event {
+        cursor: pointer;
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+    .fc-daygrid-event {
+        white-space: normal;
+    }
+    .fc-event-title {
+        font-weight: 500;
+    }
+    .session-scheduled { background-color: #3B82F6; border-color: #3B82F6; }
+    .session-completed { background-color: #10B981; border-color: #10B981; }
+    .session-cancelled { background-color: #EF4444; border-color: #EF4444; }
+    .availability-slot { background-color: #F3F4F6; border: 2px dashed #9CA3AF; color: #4B5563; }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{% trans "Teaching Schedule" %}</h1>
+            <p class="text-gray-600 mt-2">{% trans "Manage your classes and availability" %}</p>
+        </div>
+        <div class="flex space-x-2">
+            <button onclick="showAvailabilityModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                <i class="fas fa-clock mr-2"></i>{% trans "Set Availability" %}
+            </button>
+            <button onclick="exportSchedule()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                <i class="fas fa-download mr-2"></i>{% trans "Export" %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Calendar Controls -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex space-x-2">
+                <button onclick="changeCalendarView('month')" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 view-btn" data-view="month">
+                    {% trans "Month" %}
+                </button>
+                <button onclick="changeCalendarView('week')" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 view-btn" data-view="week">
+                    {% trans "Week" %}
+                </button>
+                <button onclick="changeCalendarView('day')" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 view-btn" data-view="day">
+                    {% trans "Day" %}
+                </button>
+                <button onclick="changeCalendarView('list')" class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200 view-btn" data-view="list">
+                    {% trans "List" %}
+                </button>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                    <span class="text-sm">{% trans "Scheduled" %}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                    <span class="text-sm">{% trans "Completed" %}</span>
+                </div>
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-gray-300 rounded-full mr-2"></span>
+                    <span class="text-sm">{% trans "Available" %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendar -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div id="teacherCalendar"></div>
+    </div>
+    
+    <!-- Today's Classes -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Today's Classes" %}</h2>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {% for session in sessions %}
+                    {% if session.date == today %}
+                    <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <h3 class="font-medium text-gray-800">{{ session.course.title }}</h3>
+                                <span class="ml-3 px-2 py-1 text-xs rounded-full bg-{% get_status_color session.status %}-100 text-{% get_status_color session.status %}-800">
+                                    {{ session.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <p><i class="far fa-clock mr-1"></i> {{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}</p>
+                                <p><i class="fas fa-user mr-1"></i> {{ session.student.get_full_name }}</p>
+                                <p><i class="fas fa-video mr-1"></i> {{ session.get_platform_display }}</p>
+                                {% if session.topic %}
+                                <p><i class="fas fa-bookmark mr-1"></i> {{ session.topic }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="ml-4 flex space-x-2">
+                            {% if session.meeting_link and session.status == 'scheduled' %}
+                                <a href="{{ session.meeting_link }}" target="_blank" 
+                                   class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                    <i class="fas fa-video mr-1"></i> {% trans "Start" %}
+                                </a>
+                            {% endif %}
+                            <button onclick="viewSessionDetails('{{ session.session_id }}')" 
+                                    class="bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% empty %}
+                <p class="text-gray-500 text-center py-8">{% trans "No classes scheduled for today" %}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Availability Overview -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Weekly Availability" %}</h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-7 gap-2">
+                {% for day_num, day_name in days_of_week %}
+                <div class="text-center">
+                    <h4 class="font-medium text-gray-700 mb-2">{{ day_name }}</h4>
+                    <div class="space-y-1">
+                        {% for slot in availability %}
+                            {% if slot.day_of_week == day_num %}
+                            <div class="bg-green-50 text-green-700 text-xs py-1 px-2 rounded">
+                                {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not availability|filter_by_day:day_num %}
+                        <div class="text-gray-400 text-xs py-2">{% trans "Not available" %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Details Modal -->
+<div id="sessionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">{% trans "Session Details" %}</h3>
+                <button onclick="closeSessionModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="sessionDetailsContent" class="px-4 py-3">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="flex justify-end space-x-2 mt-4">
+                <button onclick="markAttendance('completed')" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    {% trans "Mark Complete" %}
+                </button>
+                <button onclick="markAttendance('no_show')" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                    {% trans "Mark No Show" %}
+                </button>
+                <button onclick="closeSessionModal()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                    {% trans "Close" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Availability Modal -->
+<div id="availabilityModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-[500px] shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">{% trans "Set Availability" %}</h3>
+                <button onclick="closeAvailabilityModal()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="availabilityForm" class="px-4 py-3">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">{% trans "Day of Week" %}</label>
+                    <select id="dayOfWeek" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                        {% for day_num, day_name in days_of_week %}
+                        <option value="{{ day_num }}">{{ day_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">{% trans "Start Time" %}</label>
+                        <input type="time" id="startTime" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">{% trans "End Time" %}</label>
+                        <input type="time" id="endTime" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                        {% trans "Add Availability" %}
+                    </button>
+                    <button type="button" onclick="closeAvailabilityModal()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                        {% trans "Cancel" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script>
+    let calendar;
+    let currentSession = null;
+    const sessionsData = {{ sessions_json|safe }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('teacherCalendar');
+        
+        // Convert sessions to events
+        const events = [];
+        for (const date in sessionsData) {
+            sessionsData[date].forEach(session => {
+                events.push({
+                    id: session.id,
+                    title: session.title,
+                    start: date + 'T' + session.time.split(' - ')[0],
+                    end: date + 'T' + session.time.split(' - ')[1],
+                    className: 'session-' + session.status,
+                    extendedProps: {
+                        status: session.status,
+                        platform: session.platform,
+                        student: session.student
+                    }
+                });
+            });
+        }
+        
+        // Add availability slots
+        {% for slot in availability %}
+        events.push({
+            title: '{% trans "Available" %}',
+            daysOfWeek: ['{{ slot.day_of_week }}'],
+            startTime: '{{ slot.start_time|time:"H:i" }}',
+            endTime: '{{ slot.end_time|time:"H:i" }}',
+            className: 'availability-slot',
+            display: 'background'
+        });
+        {% endfor %}
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+            },
+            height: 'auto',
+            slotMinTime: '06:00:00',
+            slotMaxTime: '22:00:00',
+            expandRows: true,
+            events: events,
+            eventClick: function(info) {
+                if (info.event.id) {
+                    viewSessionDetails(info.event.id);
+                }
+            },
+            dateClick: function(info) {
+                // Quick add session
+                console.log('Date clicked:', info.dateStr);
+            }
+        });
+        
+        calendar.render();
+    });
+    
+    function changeCalendarView(view) {
+        const viewMap = {
+            'month': 'dayGridMonth',
+            'week': 'timeGridWeek',
+            'day': 'timeGridDay',
+            'list': 'listWeek'
+        };
+        
+        calendar.changeView(viewMap[view]);
+        
+        // Update button styles
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.classList.remove('bg-green-600', 'text-white');
+            btn.classList.add('bg-gray-100');
+        });
+        document.querySelector(`[data-view="${view}"]`).classList.remove('bg-gray-100');
+        document.querySelector(`[data-view="${view}"]`).classList.add('bg-green-600', 'text-white');
+    }
+    
+    function viewSessionDetails(sessionId) {
+        // Fetch session details via AJAX
+        fetch(`/api/session/${sessionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                currentSession = data;
+                const content = `
+                    <div class="space-y-3">
+                        <div>
+                            <strong>{% trans "Course:" %}</strong> ${data.course}
+                        </div>
+                        <div>
+                            <strong>{% trans "Student:" %}</strong> ${data.student}
+                        </div>
+                        <div>
+                            <strong>{% trans "Date & Time:" %}</strong> ${data.date} ${data.time}
+                        </div>
+                        <div>
+                            <strong>{% trans "Platform:" %}</strong> ${data.platform}
+                        </div>
+                        <div>
+                            <strong>{% trans "Status:" %}</strong> ${data.status}
+                        </div>
+                        ${data.topic ? `<div><strong>{% trans "Topic:" %}</strong> ${data.topic}</div>` : ''}
+                        ${data.meeting_link ? `<div><strong>{% trans "Meeting Link:" %}</strong> <a href="${data.meeting_link}" target="_blank" class="text-green-600 hover:underline">{% trans "Join Meeting" %}</a></div>` : ''}
+                    </div>
+                `;
+                document.getElementById('sessionDetailsContent').innerHTML = content;
+                document.getElementById('sessionModal').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error fetching session details:', error);
+            });
+    }
+    
+    function closeSessionModal() {
+        document.getElementById('sessionModal').classList.add('hidden');
+        currentSession = null;
+    }
+    
+    function markAttendance(status) {
+        if (!currentSession) return;
+        
+        fetch('/api/mark-attendance/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                session_id: currentSession.id,
+                status: status
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('{% trans "Attendance marked successfully" %}');
+                location.reload();
+            }
+        });
+    }
+    
+    function showAvailabilityModal() {
+        document.getElementById('availabilityModal').classList.remove('hidden');
+    }
+    
+    function closeAvailabilityModal() {
+        document.getElementById('availabilityModal').classList.add('hidden');
+    }
+    
+    document.getElementById('availabilityForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            day: document.getElementById('dayOfWeek').value,
+            start_time: document.getElementById('startTime').value,
+            end_time: document.getElementById('endTime').value,
+            action: 'add'
+        };
+        
+        fetch('{% url "dashboard:teacher_availability" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: new URLSearchParams(formData)
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    });
+    
+    function exportSchedule() {
+        window.location.href = '{% url "dashboard:admin_reports" %}?type=schedule&format=excel';
+    }
+</script>
+{% endblock %}

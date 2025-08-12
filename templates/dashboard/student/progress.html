@@ -1,0 +1,169 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+{% load dashboard_tags %}
+
+{% block title %}{% trans "My Progress" %} - Amar Quran{% endblock %}
+
+{% block extra_css %}
+<style>
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{% trans "Learning Progress" %}</h1>
+        <p class="text-gray-600 mt-2">{% trans "Track your learning journey and achievements" %}</p>
+    </div>
+    
+    <!-- Overall Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <div class="relative inline-flex items-center justify-center">
+                <svg class="w-20 h-20">
+                    <circle cx="40" cy="40" r="36" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
+                    <circle cx="40" cy="40" r="36" stroke="#10b981" stroke-width="8" fill="none"
+                            stroke-dasharray="{{ avg_progress|multiply:2.26 }} 226"
+                            class="progress-ring"></circle>
+                </svg>
+                <span class="absolute text-xl font-bold">{{ avg_progress|floatformat:0 }}%</span>
+            </div>
+            <p class="mt-2 text-sm text-gray-600">{% trans "Overall Progress" %}</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <div class="text-3xl font-bold text-blue-600 mb-2">{{ total_enrolled }}</div>
+            <p class="text-sm text-gray-600">{% trans "Courses Enrolled" %}</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <div class="text-3xl font-bold text-green-600 mb-2">{{ total_completed }}</div>
+            <p class="text-sm text-gray-600">{% trans "Courses Completed" %}</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <div class="text-3xl font-bold text-purple-600 mb-2">{{ learning_streak }}</div>
+            <p class="text-sm text-gray-600">{% trans "Day Streak" %} 🔥</p>
+        </div>
+    </div>
+    
+    <!-- Course Progress Details -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Course Progress" %}</h2>
+        </div>
+        <div class="p-6">
+            <div class="space-y-6">
+                {% for item in progress_data %}
+                <div class="border rounded-lg p-4 hover:bg-gray-50">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-medium text-gray-800">{{ item.course.title }}</h3>
+                            <p class="text-sm text-gray-600 mt-1">
+                                {% trans "Started:" %} {{ item.started_at|date:"M d, Y"|default:"Not started" }}
+                                {% if item.last_activity %}
+                                    | {% trans "Last activity:" %} {{ item.last_activity.date|date:"M d, Y" }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <span class="px-3 py-1 text-xs font-medium rounded-full bg-{% get_status_color item.status %}-100 text-{% get_status_color item.status %}-800">
+                            {{ item.enrollment.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mb-3">
+                        {% progress_bar item.completed_lessons item.total_lessons %}
+                    </div>
+                    
+                    <!-- Lesson Details -->
+                    <div class="flex items-center justify-between text-sm text-gray-600">
+                        <span>
+                            <i class="fas fa-book-open mr-1"></i>
+                            {{ item.completed_lessons }}/{{ item.total_lessons }} {% trans "lessons completed" %}
+                        </span>
+                        <a href="{% url 'courses:detail' item.course.slug %}" 
+                           class="text-green-600 hover:text-green-700">
+                            {% trans "Continue Learning" %} →
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8">
+                    <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500">{% trans "No courses to track yet" %}</p>
+                    <a href="{% url 'courses:list' %}" 
+                       class="inline-block mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+                        {% trans "Browse Courses" %}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Achievements Section -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Achievements" %}</h2>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Achievement Badges -->
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto bg-yellow-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-star text-yellow-600 text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-medium">{% trans "First Class" %}</p>
+                    <p class="text-xs text-gray-500">{% trans "Completed" %}</p>
+                </div>
+                
+                <div class="text-center opacity-50">
+                    <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-trophy text-gray-400 text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-medium">{% trans "Course Master" %}</p>
+                    <p class="text-xs text-gray-500">{% trans "Complete 5 courses" %}</p>
+                </div>
+                
+                <div class="text-center opacity-50">
+                    <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-fire text-gray-400 text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-medium">{% trans "30 Day Streak" %}</p>
+                    <p class="text-xs text-gray-500">{% trans "Study for 30 days" %}</p>
+                </div>
+                
+                <div class="text-center opacity-50">
+                    <div class="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-graduation-cap text-gray-400 text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-medium">{% trans "Scholar" %}</p>
+                    <p class="text-xs text-gray-500">{% trans "100% in a course" %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate progress circles on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const circles = document.querySelectorAll('.progress-ring');
+        circles.forEach(circle => {
+            const circumference = 2 * Math.PI * 36;
+            circle.style.strokeDasharray = `0 ${circumference}`;
+            setTimeout(() => {
+                circle.style.transition = 'stroke-dasharray 1s ease-in-out';
+                circle.style.strokeDasharray = circle.getAttribute('stroke-dasharray');
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

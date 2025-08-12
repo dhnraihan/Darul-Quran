@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Free Assessment" %} - Amar Quran{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    .step {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 1rem;
+        position: relative;
+    }
+    .step.active {
+        background-color: #10b981;
+        color: white;
+    }
+    .step.completed {
+        background-color: #059669;
+        color: white;
+    }
+    .step.inactive {
+        background-color: #e5e7eb;
+        color: #9ca3af;
+    }
+    .step-line {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        height: 2px;
+        background-color: #e5e7eb;
+        z-index: -1;
+    }
+    .step-line.completed {
+        background-color: #10b981;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8" x-data="assessmentForm()">
+    <h1 class="text-3xl font-bold text-center mb-8">{% trans "Book Your Free Trial Class" %}</h1>
+    
+    <!-- Step Indicator -->
+    <div class="step-indicator mb-8">
+        <div class="step" :class="currentStep >= 1 ? (currentStep > 1 ? 'completed' : 'active') : 'inactive'">
+            1
+        </div>
+        <div class="step-line" :class="currentStep > 1 ? 'completed' : ''"></div>
+        <div class="step" :class="currentStep >= 2 ? (currentStep > 2 ? 'completed' : 'active') : 'inactive'">
+            2
+        </div>
+        <div class="step-line" :class="currentStep > 2 ? 'completed' : ''"></div>
+        <div class="step" :class="currentStep >= 3 ? 'active' : 'inactive'">
+            3
+        </div>
+    </div>
+    
+    <form method="post" @submit.prevent="submitForm" class="bg-white rounded-lg shadow-md p-6">
+        {% csrf_token %}
+        
+        <!-- Step 1: Basic Information -->
+        <div x-show="currentStep === 1" x-transition>
+            <h2 class="text-xl font-semibold mb-4">{% trans "Step 1: Basic Information" %}</h2>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">
+                    {% trans "Full Name" %} <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       x-model="formData.full_name" 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                       placeholder="{% trans 'Enter your full name' %}"
+                       required>
+                <span x-show="errors.full_name" class="text-red-500 text-sm" x-text="errors.full_name"></span>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">
+                    {% trans "Phone Number" %} <span class="text-red-500">*</span>
+                </label>
+                <input type="tel" 
+                       x-model="formData.phone_number" 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                       placeholder="+880 1XXX-XXXXXX"
+                       required>
+                <span x-show="errors.phone_number" class="text-red-500 text-sm" x-text="errors.phone_number"></span>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="button" 
+                        @click="nextStep()"
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                    {% trans "Next" %} →
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 2: Additional Information -->
+        <div x-show="currentStep === 2" x-transition>
+            <h2 class="text-xl font-semibold mb-4">{% trans "Step 2: Additional Information (Optional)" %}</h2>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">{% trans "Email Address" %}</label>
+                <input type="email" 
+                       x-model="formData.email" 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                       placeholder="{% trans 'Email (optional)' %}">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">{% trans "Preferred Course" %}</label>
+                <select x-model="formData.preferred_course" 
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    <option value="">{% trans "Select a course" %}</option>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">{% trans "Preferred Trial Date" %}</label>
+                    <input type="date" 
+                           x-model="formData.trial_date" 
+                           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">{% trans "Preferred Trial Time" %}</label>
+                    <input type="time" 
+                           x-model="formData.trial_time" 
+                           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">{% trans "Current Level" %}</label>
+                    <select x-model="formData.current_level" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                        <option value="">{% trans "Select level" %}</option>
+                        <option value="beginner">{% trans "Beginner" %}</option>
+                        <option value="elementary">{% trans "Elementary" %}</option>
+                        <option value="intermediate">{% trans "Intermediate" %}</option>
+                        <option value="advanced">{% trans "Advanced" %}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">{% trans "Age" %}</label>
+                    <input type="number" 
+                           x-model="formData.age" 
+                           min="3" 
+                           max="100"
+                           class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                           placeholder="{% trans 'Age' %}">
+                </div>
+            </div>
+            
+            <div class="flex justify-between">
+                <button type="button" 
+                        @click="prevStep()"
+                        class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition">
+                    ← {% trans "Previous" %}
+                </button>
+                <button type="button" 
+                        @click="nextStep()"
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+                    {% trans "Next" %} →
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Additional Notes & Submit -->
+        <div x-show="currentStep === 3" x-transition>
+            <h2 class="text-xl font-semibold mb-4">{% trans "Step 3: Additional Notes" %}</h2>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">{% trans "Additional Notes" %}</label>
+                <textarea x-model="formData.notes" 
+                          rows="4"
+                          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                          placeholder="{% trans 'Any special requirements or questions?' %}"></textarea>
+            </div>
+            
+            <!-- Summary -->
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                <h3 class="font-semibold mb-2">{% trans "Summary" %}</h3>
+                <div class="text-sm space-y-1">
+                    <p><strong>{% trans "Name:" %}</strong> <span x-text="formData.full_name"></span></p>
+                    <p><strong>{% trans "Phone:" %}</strong> <span x-text="formData.phone_number"></span></p>
+                    <p x-show="formData.email"><strong>{% trans "Email:" %}</strong> <span x-text="formData.email"></span></p>
+                    <p x-show="formData.trial_date"><strong>{% trans "Trial Date:" %}</strong> <span x-text="formData.trial_date"></span></p>
+                    <p x-show="formData.trial_time"><strong>{% trans "Trial Time:" %}</strong> <span x-text="formData.trial_time"></span></p>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="flex items-center">
+                    <input type="checkbox" 
+                           x-model="formData.agree_terms" 
+                           class="mr-2">
+                    <span class="text-sm">
+                        {% trans "I agree to the" %} 
+                        <a href="{% url 'terms' %}" class="text-green-600 hover:underline">{% trans "Terms of Service" %}</a>
+                        {% trans "and" %}
+                        <a href="{% url 'privacy' %}" class="text-green-600 hover:underline">{% trans "Privacy Policy" %}</a>
+                    </span>
+                </label>
+            </div>
+            
+            <div class="flex justify-between">
+                <button type="button" 
+                        @click="prevStep()"
+                        class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition">
+                    ← {% trans "Previous" %}
+                </button>
+                <button type="submit" 
+                        :disabled="!formData.agree_terms || isSubmitting"
+                        class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                        x-text="isSubmitting ? '{% trans "Submitting..." %}' : '{% trans "Submit Assessment" %}'">
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function assessmentForm() {
+    return {
+        currentStep: 1,
+        isSubmitting: false,
+        formData: {
+            full_name: '',
+            phone_number: '',
+            email: '',
+            preferred_course: '',
+            trial_date: '',
+            trial_time: '',
+            current_level: '',
+            age: '',
+            notes: '',
+            agree_terms: false
+        },
+        errors: {},
+        
+        nextStep() {
+            if (this.validateStep()) {
+                this.currentStep++;
+            }
+        },
+        
+        prevStep() {
+            this.currentStep--;
+        },
+        
+        validateStep() {
+            this.errors = {};
+            
+            if (this.currentStep === 1) {
+                if (!this.formData.full_name) {
+                    this.errors.full_name = '{% trans "Name is required" %}';
+                }
+                if (!this.formData.phone_number) {
+                    this.errors.phone_number = '{% trans "Phone number is required" %}';
+                }
+            }
+            
+            return Object.keys(this.errors).length === 0;
+        },
+        
+        async submitForm() {
+            if (!this.validateStep() || !this.formData.agree_terms) {
+                return;
+            }
+            
+            this.isSubmitting = true;
+            
+            try {
+                const response = await fetch('{% url "classes:assessment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(this.formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '{% url "home" %}?assessment=success';
+                } else {
+                    alert('{% trans "An error occurred. Please try again." %}');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('{% trans "An error occurred. Please try again." %}');
+            } finally {
+                this.isSubmitting = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

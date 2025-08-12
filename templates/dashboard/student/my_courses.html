@@ -1,0 +1,111 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+{% load dashboard_tags %}
+
+{% block title %}{% trans "My Courses" %} - Amar Quran{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">{% trans "My Courses" %}</h1>
+        <p class="text-gray-600 mt-2">{% trans "Track your enrolled courses and progress" %}</p>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div class="mb-6 border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8">
+            <a href="?status=" 
+               class="{% if not status_filter %}border-green-500 text-green-600 border-b-2{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 font-medium text-sm">
+                {% trans "All Courses" %}
+            </a>
+            <a href="?status=active" 
+               class="{% if status_filter == 'active' %}border-green-500 text-green-600 border-b-2{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 font-medium text-sm">
+                {% trans "Active" %}
+            </a>
+            <a href="?status=completed" 
+               class="{% if status_filter == 'completed' %}border-green-500 text-green-600 border-b-2{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 font-medium text-sm">
+                {% trans "Completed" %}
+            </a>
+            <a href="?status=pending" 
+               class="{% if status_filter == 'pending' %}border-green-500 text-green-600 border-b-2{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-4 px-1 font-medium text-sm">
+                {% trans "Pending" %}
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Courses Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for enrollment in enrollments %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+            {% if enrollment.course.thumbnail %}
+                <img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}" 
+                     class="w-full h-48 object-cover">
+            {% else %}
+                <div class="w-full h-48 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                    <i class="fas fa-book-quran text-white text-4xl"></i>
+                </div>
+            {% endif %}
+            
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">{{ enrollment.course.title }}</h3>
+                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-{% get_status_color enrollment.status %}-100 text-{% get_status_color enrollment.status %}-800">
+                        {{ enrollment.get_status_display }}
+                    </span>
+                </div>
+                
+                {% if enrollment.teacher %}
+                <p class="text-sm text-gray-600 mb-4">
+                    <i class="fas fa-chalkboard-teacher mr-1"></i> {{ enrollment.teacher.get_full_name }}
+                </p>
+                {% endif %}
+                
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>{% trans "Progress" %}</span>
+                        <span>{{ enrollment.progress_percentage }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                             style="width: {{ enrollment.progress_percentage }}%"></div>
+                    </div>
+                </div>
+                
+                <!-- Course Info -->
+                <div class="text-sm text-gray-600 space-y-1 mb-4">
+                    <p><i class="far fa-calendar mr-1"></i> {% trans "Enrolled:" %} {{ enrollment.enrolled_at|date:"M d, Y" }}</p>
+                    {% if enrollment.started_at %}
+                    <p><i class="far fa-play-circle mr-1"></i> {% trans "Started:" %} {{ enrollment.started_at|date:"M d, Y" }}</p>
+                    {% endif %}
+                    {% if enrollment.completed_at %}
+                    <p><i class="far fa-check-circle mr-1"></i> {% trans "Completed:" %} {{ enrollment.completed_at|date:"M d, Y" }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex space-x-2">
+                    <a href="{% url 'courses:detail' enrollment.course.slug %}" 
+                       class="flex-1 bg-green-600 text-white text-center py-2 rounded hover:bg-green-700 transition">
+                        {% trans "Continue Learning" %}
+                    </a>
+                    <a href="{% url 'classes:schedule' %}?course={{ enrollment.course.id }}" 
+                       class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition">
+                        <i class="far fa-calendar"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12">
+            <i class="fas fa-book text-6xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 mb-4">{% trans "You haven't enrolled in any courses yet." %}</p>
+            <a href="{% url 'courses:list' %}" class="inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">
+                {% trans "Browse Courses" %}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

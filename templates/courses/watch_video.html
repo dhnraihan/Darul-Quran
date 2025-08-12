@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ video.title }} - {{ course.title }} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid lg:grid-cols-4 gap-6">
+        <!-- Video Player -->
+        <div class="lg:col-span-3">
+            <div class="bg-black rounded-lg overflow-hidden mb-6">
+                <div class="relative pb-[56.25%]">
+                    <iframe src="{{ video.video_url }}" 
+                            class="absolute top-0 left-0 w-full h-full"
+                            frameborder="0" 
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h1 class="text-2xl font-bold mb-4">{{ video.title }}</h1>
+                <p class="text-gray-600 mb-6">{{ video.description }}</p>
+                
+                <!-- Video Navigation -->
+                <div class="flex justify-between items-center pt-6 border-t">
+                    {% if prev_video %}
+                    <a href="{% url 'courses:watch_video' course.slug prev_video.id %}" 
+                       class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
+                        <i class="fas fa-chevron-left mr-2"></i>{% trans "Previous" %}
+                    </a>
+                    {% else %}
+                    <span></span>
+                    {% endif %}
+                    
+                    {% if is_enrolled %}
+                    <button onclick="markComplete()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <i class="fas fa-check mr-2"></i>{% trans "Mark as Complete" %}
+                    </button>
+                    {% endif %}
+                    
+                    {% if next_video %}
+                    <a href="{% url 'courses:watch_video' course.slug next_video.id %}" 
+                       class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        {% trans "Next" %}<i class="fas fa-chevron-right ml-2"></i>
+                    </a>
+                    {% else %}
+                    <span></span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Playlist Sidebar -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md sticky top-20">
+                <div class="p-4 border-b">
+                    <h3 class="font-semibold">{{ course.title }}</h3>
+                </div>
+                <div class="max-h-[600px] overflow-y-auto">
+                    {% for v in all_videos %}
+                    <a href="{% url 'courses:watch_video' course.slug v.id %}" 
+                       class="flex items-center p-3 hover:bg-gray-50 {% if v.id == video.id %}bg-green-50 border-l-4 border-green-600{% endif %}">
+                        <div class="mr-3">
+                            {% if v.id == video.id %}
+                                <i class="fas fa-play-circle text-green-600"></i>
+                            {% else %}
+                                <i class="far fa-play-circle text-gray-400"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium {% if v.id == video.id %}text-green-600{% endif %}">
+                                {{ v.title }}
+                            </p>
+                            <p class="text-xs text-gray-500">{{ v.duration_minutes }} min</p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markComplete() {
+    fetch("{% url 'courses:update_progress' course.slug %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            lesson_id: {{ forloop.counter }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('{% trans "Marked as complete!" %}');
+        }
+    });
+}
+</script>
+{% endblock %}

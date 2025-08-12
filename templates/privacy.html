@@ -1,0 +1,56 @@
+    {% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Privacy Policy" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">{% trans "Privacy Policy" %}</h1>
+    
+    <div class="prose prose-lg">
+        <p>{% trans "Last updated:" %} August 13, 2025</p>
+        
+        <h2>{% trans "1. Information We Collect" %}</h2>
+        <p>{% trans "We collect information you provide directly to us, such as:" %}</p>
+        <ul>
+            <li>{% trans "Name, email address, phone number" %}</li>
+            <li>{% trans "Payment information (processed securely through payment gateways)" %}</li>
+            <li>{% trans "Course enrollment and progress data" %}</li>
+            <li>{% trans "Communications between teachers and students" %}</li>
+        </ul>
+        
+        <h2>{% trans "2. How We Use Your Information" %}</h2>
+        <p>{% trans "We use the information we collect to:" %}</p>
+        <ul>
+            <li>{% trans "Provide and improve our services" %}</li>
+            <li>{% trans "Process payments and send confirmations" %}</li>
+            <li>{% trans "Send class reminders and notifications" %}</li>
+            <li>{% trans "Respond to your requests and support needs" %}</li>
+        </ul>
+        
+        <h2>{% trans "3. Data Security" %}</h2>
+        <p>{% trans "We implement appropriate technical and organizational measures to protect your personal data against unauthorized access, alteration, disclosure, or destruction." %}</p>
+        
+        <h2>{% trans "4. Data Retention" %}</h2>
+        <p>{% trans "We retain your personal data only for as long as necessary to fulfill the purposes for which it was collected and to comply with legal obligations." %}</p>
+        
+        <h2>{% trans "5. Your Rights" %}</h2>
+        <p>{% trans "You have the right to:" %}</p>
+        <ul>
+            <li>{% trans "Access your personal data" %}</li>
+            <li>{% trans "Correct inaccurate data" %}</li>
+            <li>{% trans "Request deletion of your data" %}</li>
+            <li>{% trans "Object to processing of your data" %}</li>
+            <li>{% trans "Data portability" %}</li>
+        </ul>
+        
+        <h2>{% trans "6. Contact Us" %}</h2>
+        <p>{% trans "If you have any questions about this Privacy Policy, please contact us at:" %}</p>
+        <p>
+            Email: privacy@amarquran.com<br>
+            Phone: +880 1XXX-XXXXXX<br>
+            Address: Dhaka, Bangladesh
+        </p>
+    </div>
+</div>
+{% endblock %}

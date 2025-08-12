@@ -1,0 +1,203 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load i18n %}
+{% load dashboard_tags %}
+
+{% block title %}{% trans "Class Schedule" %} - Amar Quran{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .fc-event {
+        cursor: pointer;
+        padding: 2px 4px;
+    }
+    .fc-daygrid-event {
+        white-space: normal;
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{% trans "Class Schedule" %}</h1>
+            <p class="text-gray-600 mt-2">{% trans "View and manage your upcoming classes" %}</p>
+        </div>
+        <div class="flex space-x-2">
+            <button onclick="changeView('month')" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">
+                {% trans "Month" %}
+            </button>
+            <button onclick="changeView('week')" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">
+                {% trans "Week" %}
+            </button>
+            <button onclick="changeView('list')" class="px-4 py-2 bg-white border rounded hover:bg-gray-50">
+                {% trans "List" %}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Calendar -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div id="calendar"></div>
+    </div>
+    
+    <!-- Upcoming Sessions List -->
+    <div class="mt-6 bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">{% trans "Upcoming Classes" %}</h2>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                {% for session in sessions %}
+                <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div class="flex-1">
+                        <h3 class="font-medium text-gray-800">{{ session.course.title }}</h3>
+                        <div class="mt-1 text-sm text-gray-600 space-y-1">
+                            <p>
+                                <i class="far fa-calendar mr-1"></i> {{ session.date|date:"l, F d, Y" }}
+                                <i class="far fa-clock ml-3 mr-1"></i> {{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}
+                            </p>
+                            <p>
+                                <i class="fas fa-chalkboard-teacher mr-1"></i> {{ session.teacher.get_full_name }}
+                                <span class="ml-3">
+                                    <i class="fas fa-video mr-1"></i> {{ session.get_platform_display }}
+                                </span>
+                            </p>
+                            {% if session.topic %}
+                            <p><i class="fas fa-bookmark mr-1"></i> {{ session.topic }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="ml-4 text-right">
+                        <div class="mb-2">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full bg-{% get_status_color session.status %}-100 text-{% get_status_color session.status %}-800">
+                                {{ session.get_status_display }}
+                            </span>
+                        </div>
+                        {% if session.meeting_link and session.is_upcoming %}
+                            <a href="{{ session.meeting_link }}" target="_blank" 
+                               class="inline-block bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
+                                {% trans "Join Class" %}
+                            </a>
+                        {% elif session.platform == 'whatsapp' and session.is_upcoming %}
+                            <a href="{{ session.get_whatsapp_link }}" target="_blank" 
+                               class="inline-block bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">
+                                <i class="fab fa-whatsapp mr-1"></i> {% trans "Open WhatsApp" %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-500 text-center py-8">{% trans "No upcoming classes scheduled" %}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Class Details Modal -->
+<div id="classModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle"></h3>
+            <div class="mt-2 px-7 py-3">
+                <div id="modalContent" class="text-sm text-gray-500"></div>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600">
+                    {% trans "Close" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var sessionsData = {{ sessions_json|safe }};
+        
+        // Convert sessions to FullCalendar events
+        var events = [];
+        for (var date in sessionsData) {
+            sessionsData[date].forEach(function(session) {
+                events.push({
+                    id: session.id,
+                    title: session.title,
+                    start: date + 'T' + session.time,
+                    extendedProps: {
+                        teacher: session.teacher,
+                        status: session.status,
+                        platform: session.platform,
+                        meeting_link: session.meeting_link
+                    },
+                    color: getEventColor(session.status)
+                });
+            });
+        }
+        
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            events: events,
+            eventClick: function(info) {
+                showClassDetails(info.event);
+            },
+            height: 'auto'
+        });
+        
+        calendar.render();
+        
+        window.changeView = function(view) {
+            if (view === 'month') {
+                calendar.changeView('dayGridMonth');
+            } else if (view === 'week') {
+                calendar.changeView('timeGridWeek');
+            } else if (view === 'list') {
+                calendar.changeView('listWeek');
+            }
+        };
+    });
+    
+    function getEventColor(status) {
+        const colors = {
+            'scheduled': '#3B82F6',
+            'completed': '#10B981',
+            'cancelled': '#EF4444',
+            'rescheduled': '#F59E0B'
+        };
+        return colors[status] || '#6B7280';
+    }
+    
+    function showClassDetails(event) {
+        document.getElementById('modalTitle').textContent = event.title;
+        
+        var content = `
+            <p><strong>Time:</strong> ${event.start.toLocaleString()}</p>
+            <p><strong>Teacher:</strong> ${event.extendedProps.teacher}</p>
+            <p><strong>Platform:</strong> ${event.extendedProps.platform}</p>
+            <p><strong>Status:</strong> ${event.extendedProps.status}</p>
+        `;
+        
+        if (event.extendedProps.meeting_link) {
+            content += `<p class="mt-3"><a href="${event.extendedProps.meeting_link}" target="_blank" class="text-green-600 hover:underline">Join Meeting</a></p>`;
+        }
+        
+        document.getElementById('modalContent').innerHTML = content;
+        document.getElementById('classModal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('classModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

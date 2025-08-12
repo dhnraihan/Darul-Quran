@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Sign Up" %} - Amar Quran{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <div class="text-center">
+                <i class="fas fa-book-quran text-5xl text-green-600 mb-4"></i>
+                <h2 class="text-3xl font-extrabold text-gray-900">
+                    {% trans "Create your account" %}
+                </h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    {% trans "Join Amar Quran and start your learning journey" %}
+                </p>
+            </div>
+        </div>
+        
+        <form class="mt-8 space-y-6" method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+            
+            <div class="space-y-4">
+                <!-- User Type Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "I want to register as" %} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <input type="radio" name="user_type" value="student" class="sr-only peer" required>
+                            <div class="text-center">
+                                <i class="fas fa-user-graduate text-2xl text-gray-600 mb-2"></i>
+                                <p class="font-medium">{% trans "Student" %}</p>
+                                <p class="text-xs text-gray-500">{% trans "Learn Qur'an online" %}</p>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-green-600 peer-checked:bg-green-50">
+                            <input type="radio" name="user_type" value="teacher" class="sr-only peer">
+                            <div class="text-center">
+                                <i class="fas fa-chalkboard-teacher text-2xl text-gray-600 mb-2"></i>
+                                <p class="font-medium">{% trans "Teacher" %}</p>
+                                <p class="text-xs text-gray-500">{% trans "Teach Qur'an online" %}</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Name Fields -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-gray-700">
+                            {% trans "First Name" %} <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="first_name" id="first_name" required
+                               class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500"
+                               value="{{ form.first_name.value|default:'' }}">
+                        {% if form.first_name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.first_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="last_name" class="block text-sm font-medium text-gray-700">
+                            {% trans "Last Name" %} <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="last_name" id="last_name" required
+                               class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500"
+                               value="{{ form.last_name.value|default:'' }}">
+                        {% if form.last_name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.last_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">
+                        {% trans "Email Address" %} <span class="text-red-500">*</span>
+                    </label>
+                    <input type="email" name="email" id="email" required
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500"
+                           value="{{ form.email.value|default:'' }}">
+                    {% if form.email.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Phone Number -->
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-gray-700">
+                        {% trans "Phone Number" %} <span class="text-red-500">*</span>
+                    </label>
+                    <input type="tel" name="phone_number" id="phone_number" required
+                           placeholder="+880 1XXX-XXXXXX"
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500"
+                           value="{{ form.phone_number.value|default:'' }}">
+                    {% if form.phone_number.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.phone_number.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Password -->
+                <div>
+                    <label for="password1" class="block text-sm font-medium text-gray-700">
+                        {% trans "Password" %} <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" name="password1" id="password1" required
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    {% if form.password1.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.password1.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">{% trans "Must be at least 8 characters" %}</p>
+                </div>
+                
+                <!-- Confirm Password -->
+                <div>
+                    <label for="password2" class="block text-sm font-medium text-gray-700">
+                        {% trans "Confirm Password" %} <span class="text-red-500">*</span>
+                    </label>
+                    <input type="password" name="password2" id="password2" required
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    {% if form.password2.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.password2.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Terms and Conditions -->
+                <div>
+                    <label class="flex items-start">
+                        <input type="checkbox" name="terms_agreed" required
+                               class="mt-1 mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <span class="text-sm text-gray-700">
+                            {% trans "I agree to the" %}
+                            <a href="{% url 'terms' %}" class="text-green-600 hover:text-green-500" target="_blank">{% trans "Terms of Service" %}</a>
+                            {% trans "and" %}
+                            <a href="{% url 'privacy' %}" class="text-green-600 hover:text-green-500" target="_blank">{% trans "Privacy Policy" %}</a>
+                        </span>
+                    </label>
+                    {% if form.terms_agreed.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.terms_agreed.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    {% trans "Create Account" %}
+                </button>
+            </div>
+            
+            <div class="text-center">
+                <p class="text-sm text-gray-600">
+                    {% trans "Already have an account?" %}
+                    <a href="{% url 'accounts:login' %}" class="font-medium text-green-600 hover:text-green-500">
+                        {% trans "Sign in" %}
+                    </a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Add visual feedback for radio button selection
+    document.querySelectorAll('input[name="user_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Reset all labels
+            document.querySelectorAll('label:has(input[name="user_type"])').forEach(label => {
+                label.classList.remove('border-green-600', 'bg-green-50');
+                label.classList.add('border-gray-300');
+            });
+            // Highlight selected
+            if (this.checked) {
+                this.closest('label').classList.remove('border-gray-300');
+                this.closest('label').classList.add('border-green-600', 'bg-green-50');
+            }
+        });
+    });
+</script>
+{% endblock %}
