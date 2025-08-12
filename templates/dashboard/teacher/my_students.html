@@ -99,7 +99,7 @@
                             {{ student_data.attended_classes }}/{{ student_data.total_classes }}
                             {% if student_data.total_classes > 0 %}
                                 <span class="text-gray-500">
-                                    ({% percentage student_data.attended_classes student_data.total_classes %}%)
+                                    ({{ student_data.attended_classes|percentage:student_data.total_classes }}%)
                                 </span>
                             {% endif %}
                         </div>

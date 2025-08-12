@@ -200,3 +200,61 @@ class TeacherProfileForm(forms.ModelForm):
                 'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500'
             }),
         }
+
+
+class StudentProfileForm(forms.ModelForm):
+    """Form for student profile"""
+    
+    AGE_GROUP_CHOICES = [
+        ('child', _('Child (5-12)')),
+        ('teen', _('Teen (13-19)')),
+        ('adult', _('Adult (20+)')),
+    ]
+    
+    CURRENT_LEVEL_CHOICES = [
+        ('beginner', _('Beginner')),
+        ('basic', _('Basic Reading')),
+        ('intermediate', _('Intermediate')),
+        ('advanced', _('Advanced')),
+    ]
+    
+    age_group = forms.ChoiceField(
+        choices=AGE_GROUP_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'mr-2'}),
+        required=True
+    )
+    
+    current_level = forms.ChoiceField(
+        choices=CURRENT_LEVEL_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500'
+        }),
+        required=True
+    )
+    
+    class Meta:
+        model = StudentProfile
+        fields = ['age_group', 'current_level', 'learning_goals', 
+                 'parent_name', 'parent_email', 'parent_phone', 'timezone']
+        widgets = {
+            'learning_goals': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
+                'rows': 3,
+                'placeholder': _('What are your learning goals?')
+            }),
+            'parent_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
+                'placeholder': _('Parent/Guardian Name')
+            }),
+            'parent_email': forms.EmailInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
+                'placeholder': _('Parent/Guardian Email')
+            }),
+            'parent_phone': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
+                'placeholder': _('Parent/Guardian Phone')
+            }),
+            'timezone': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500'
+            }),
+        }

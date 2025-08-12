@@ -9,7 +9,7 @@ urlpatterns = [
     # Authentication
     path('register/', views.RegisterView.as_view(), name='register'),
     path('login/', views.LoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
     
     # Password reset
     path('password-reset/', auth_views.PasswordResetView.as_view(
@@ -42,6 +42,7 @@ urlpatterns = [
     path('student/profile/', RedirectView.as_view(pattern_name='dashboard:student_dashboard', permanent=False), name='student_profile'),
     
     # Verification
+    path('verify-email/request/', views.verify_email_request, name='verify_email_request'),
     path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
     path('verify-phone/', views.verify_phone, name='verify_phone'),
 ]

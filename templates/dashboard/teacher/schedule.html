@@ -140,16 +140,13 @@
                 <div class="text-center">
                     <h4 class="font-medium text-gray-700 mb-2">{{ day_name }}</h4>
                     <div class="space-y-1">
-                        {% for slot in availability %}
-                            {% if slot.day_of_week == day_num %}
+                        {% for slot in availability|filter_by_day:day_num %}
                             <div class="bg-green-50 text-green-700 text-xs py-1 px-2 rounded">
                                 {{ slot.start_time|time:"g:i A" }} - {{ slot.end_time|time:"g:i A" }}
                             </div>
-                            {% endif %}
+                        {% empty %}
+                            <div class="text-gray-400 text-xs py-2">{% trans "Not available" %}</div>
                         {% endfor %}
-                        {% if not availability|filter_by_day:day_num %}
-                        <div class="text-gray-400 text-xs py-2">{% trans "Not available" %}</div>
-                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

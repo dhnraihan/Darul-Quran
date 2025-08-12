@@ -120,3 +120,22 @@ def time_until(value):
         return f"In {minutes} minute{'s' if minutes > 1 else ''}"
     else:
         return "Starting soon"
+
+
+@register.filter
+def filter_by_day(availability_slots, day_num):
+    """Filter availability slots by day of week (0-6, where 0 is Monday)"""
+    if not availability_slots:
+        return []
+    
+    try:
+        day_num = int(day_num)
+        return [slot for slot in availability_slots if slot.day_of_week == day_num]
+    except (ValueError, AttributeError, TypeError):
+        return []
+
+
+@register.filter
+def get_item(dictionary, key):
+    """Get dictionary value by key in templates"""
+    return dictionary.get(key)
