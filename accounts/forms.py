@@ -206,14 +206,17 @@ class StudentProfileForm(forms.ModelForm):
     """Form for student profile"""
     
     AGE_GROUP_CHOICES = [
-        ('child', _('Child (5-12)')),
-        ('teen', _('Teen (13-19)')),
-        ('adult', _('Adult (20+)')),
+        ('5-7', '5-7 years'),
+        ('8-10', '8-10 years'),
+        ('11-13', '11-13 years'),
+        ('14-16', '14-16 years'),
+        ('17-19', '17-19 years'),
+        ('20+', '20+ years'),
     ]
     
     CURRENT_LEVEL_CHOICES = [
         ('beginner', _('Beginner')),
-        ('basic', _('Basic Reading')),
+        ('elementary', _('Elementary')),
         ('intermediate', _('Intermediate')),
         ('advanced', _('Advanced')),
     ]
@@ -221,7 +224,8 @@ class StudentProfileForm(forms.ModelForm):
     age_group = forms.ChoiceField(
         choices=AGE_GROUP_CHOICES,
         widget=forms.RadioSelect(attrs={'class': 'mr-2'}),
-        required=True
+        required=False,
+        label=_('Age Group')
     )
     
     current_level = forms.ChoiceField(
@@ -229,13 +233,22 @@ class StudentProfileForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500'
         }),
-        required=True
+        required=True,
+        label=_('Current Level')
     )
     
     class Meta:
         model = StudentProfile
-        fields = ['age_group', 'current_level', 'learning_goals', 
-                 'parent_name', 'parent_email', 'parent_phone', 'timezone']
+        fields = [
+            'age_group', 
+            'current_level', 
+            'learning_goals',
+            'parent_name', 
+            'parent_email', 
+            'parent_phone',
+            'preferred_class_time',
+            'notes'
+        ]
         widgets = {
             'learning_goals': forms.Textarea(attrs={
                 'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
@@ -254,7 +267,13 @@ class StudentProfileForm(forms.ModelForm):
                 'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
                 'placeholder': _('Parent/Guardian Phone')
             }),
-            'timezone': forms.Select(attrs={
-                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500'
+            'preferred_class_time': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
+                'placeholder': _('Preferred class time (e.g., Weekdays after 4 PM)')
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500',
+                'rows': 2,
+                'placeholder': _('Any additional notes or special requirements')
             }),
         }
